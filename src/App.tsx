@@ -8,6 +8,7 @@ import {
 } from "react";
 import { ApiError, errorMessage, requestApi } from "./api";
 import Icon from "./Icon";
+import voicedotsLogo from "./assets/voicedotslogo.svg";
 import {
   csvText,
   days,
@@ -157,18 +158,38 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
     <div className="login-layout">
       <section className="login-brand">
         <div className="brand">
-          <span className="brand-mark">
-            <Icon name="clock" />
-          </span>
-          desktime<span className="brand-dot">.</span>
+          <img className="brand-logo" src={voicedotsLogo} alt="V" />
+          <span>oiceDots</span>
         </div>
-        <h1>A clear view of your team's workday.</h1>
-        <p>Activity, attendance and application reports in one workspace.</p>
+        <div className="login-editorial">
+          <span className="section-kicker">THE VOICEDOTS WORKSPACE</span>
+          <h1>
+            Every workday.
+            <br />A clearer picture.
+          </h1>
+          <p>Your team, their time, and the work behind it.</p>
+          <div className="login-index">
+            <div>
+              <span>01</span>
+              <strong>People & attendance</strong>
+            </div>
+            <div>
+              <span>02</span>
+              <strong>Applications & activity</strong>
+            </div>
+            <div>
+              <span>03</span>
+              <strong>Projects & reports</strong>
+            </div>
+          </div>
+          <p className="login-brand-footer">Voicedots · Team operations</p>
+        </div>
       </section>
       <main className="login-main">
         <div className="login-card">
+          <span className="section-kicker">MANAGER ACCESS</span>
           <h2>Manager sign in</h2>
-          <p className="muted">Welcome back to your workspace.</p>
+          <p className="muted">Sign in to your Voicedots workspace.</p>
           <Form
             label="Sign in"
             submit={async (d) =>
@@ -569,6 +590,15 @@ function Settings({
             }}
           >
             <div className="form-grid">
+              <div className="form-section full">
+                <span>01</span>
+                <div>
+                  <h3>Working hours</h3>
+                  <p>
+                    Set the days and hours your team works. All times are IST.
+                  </p>
+                </div>
+              </div>
               <label>
                 Workday starts (IST)
                 <input
@@ -603,6 +633,16 @@ function Settings({
                   ))}
                 </div>
               </fieldset>
+              <div className="form-section full">
+                <span>02</span>
+                <div>
+                  <h3>Activity & captures</h3>
+                  <p>
+                    Manage idle detection, screenshots, and how long records are
+                    kept.
+                  </p>
+                </div>
+              </div>
               {(
                 [
                   ["idle_seconds", "Idle threshold (seconds)", 30, 3600],
@@ -824,7 +864,7 @@ function Dialog({
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(
-                  `Desk Time\nServer: ${session.server_url}\nEnrollment code: ${code}`,
+                  `Voicedots\nServer: ${session.server_url}\nEnrollment code: ${code}`,
                 );
                 notify("Setup details copied.");
               } catch {
@@ -1157,7 +1197,7 @@ export default function App() {
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = `desktime-${view}-${filters.from}.csv`;
+    a.download = `voicedots-${view}-${filters.from}.csv`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setToast(`Exported ${rows.length - 1} rows.`);
@@ -1179,15 +1219,13 @@ export default function App() {
         <div className="workspace">
           <aside className="sidebar">
             <div className="brand">
-              <span className="brand-mark">
-                <Icon name="clock" />
-              </span>
-              desktime<span className="brand-dot">.</span>
+              <img className="brand-logo" src={voicedotsLogo} alt="V" />
+              <span>oiceDots</span>
             </div>
             <div className="workspace-label">
-              <span className="workspace-monogram">W</span>
+              <span className="workspace-monogram">V</span>
               <div>
-                My workspace<small>Manager console</small>
+                Voicedots<small>Team operations</small>
               </div>
             </div>
             <div className="nav-heading">WORKSPACE</div>

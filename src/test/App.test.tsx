@@ -156,10 +156,9 @@ describe("React dashboard", () => {
     ).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Screenshots" }));
     fireEvent.click(screen.getByRole("button", { name: /Open screenshot/ }));
-    expect(await screen.findByRole("img")).toHaveAttribute(
-      "src",
-      "data:image/jpeg;base64,aGVsbG8=",
-    );
+    expect(
+      await screen.findByRole("img", { name: /Screenshot for/ }),
+    ).toHaveAttribute("src", "data:image/jpeg;base64,aGVsbG8=");
     fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
     fireEvent.click(screen.getByRole("button", { name: "Workspace settings" }));
     fireEvent.change(screen.getByLabelText("Idle threshold (seconds)"), {
