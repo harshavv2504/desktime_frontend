@@ -1,3 +1,5 @@
+import WorkSummary from './WorkSummary';
+import ClassificationEditor from './ClassificationEditor';
 import {
   useCallback,
   useEffect,
@@ -280,7 +282,7 @@ function Reports({
     const totals = timeKeys.map((k) =>
       data.report.attendance.reduce((s, r) => s + r[k], 0),
     );
-    const usage = groupEvents(data.report.events, "usage").slice(0, 5);
+    const usage = groupEvents(data.report.usage_events || data.report.events, "usage").slice(0, 5);
     return (
       <>
         <div className="metrics">
@@ -314,6 +316,7 @@ function Reports({
             </section>
           ))}
         </div>
+        <WorkSummary rows={data.report.attendance} />
         <div className="grid-two">
           <Card
             title="Team at a glance"
@@ -416,7 +419,7 @@ function Reports({
             "Idle h",
             "Locked h",
             "Private h",
-            "Unknown h",
+            "Unknown h", "Credited h", "Required h", "Remaining h", "Productivity", "Lunch h", "Break h", "Overrun h",
           ]}
           rows={data.report.attendance.map((a) => [
             a.date,
@@ -424,6 +427,9 @@ function Reports({
             timeText(a.first),
             timeText(a.last),
             ...timeKeys.map((k) => hours(a[k])),
+            hours(a.credited || 0), hours(a.required || 0), hours(a.remaining || 0),
+            a.productivity == null ? '?' : `${a.productivity.toFixed(1)}%`,
+            hours(a.lunch || 0), hours(a.break || 0), hours(a.break_overrun || 0),
           ])}
         />
         <p className="card-body help">
@@ -443,7 +449,7 @@ function Reports({
             "Category",
             "Active time",
           ]}
-          rows={groupEvents(data.report.events, "usage").map((e) => [
+          rows={groupEvents(data.report.usage_events || data.report.events, "usage").map((e) => [
             person(e),
             e.app,
             e.domain || "—",
@@ -497,7 +503,7 @@ function Reports({
       >
         <Table
           headers={["Employee", "Project", "Task", "Active time"]}
-          rows={groupEvents(data.report.events, "projects").map((e) => [
+          rows={groupEvents(data.report.usage_events || data.report.events, "projects").map((e) => [
             person(e),
             e.project || "Unassigned",
             e.task || "—",
@@ -571,12 +577,14 @@ function Settings({
                   .filter(Boolean),
               };
               for (const k of [
+                "minimum_minutes", "lunch_minutes", "break_minutes",
                 "idle_seconds",
                 "retention_days",
                 "screenshot_seconds",
                 "screenshot_retention_days",
               ])
                 if (d.has(k)) body[k] = Number(d.get(k));
+              for (const k of ['credit_idle','lunch_paid','break_paid']) body[k] = d.get(k) === 'on';
               if (
                 Number(body.screenshot_seconds) > 0 &&
                 Number(body.screenshot_seconds) < 60
@@ -676,6 +684,12 @@ function Settings({
                     </label>
                   ),
               )}
+              <fieldset className="full">
+                <legend>Work targets, lunch & breaks</legend>
+                <p className="help">Daily allowances in minutes. Zero disables a break or leaves the work target unconfigured. Break overrun is unpaid. These settings apply from today.</p>
+                {([['minimum_minutes','Minimum work per day'],['lunch_minutes','Lunch allowance per day'],['break_minutes','Other break allowance per day']] as const).map(([key,label])=><label key={key}>{label}<input type="number" name={key} min={0} max={1440} step={1} required defaultValue={p[key] || 0}/></label>)}
+                {([['credit_idle','Count idle time toward work target'],['lunch_paid','Credit lunch up to the allowance'],['break_paid','Credit other breaks up to the allowance']] as const).map(([key,label])=><label key={key}><input type="checkbox" name={key} defaultChecked={p[key] || false}/>{label}</label>)}
+              </fieldset>
               <label className="full">
                 Holidays (one YYYY-MM-DD per line)
                 <textarea
@@ -927,32 +941,7 @@ function Dialog({
       );
       break;
     case "categories":
-      content = (
-        <Form
-          label="Save categories"
-          submit={(d) =>
-            save("categories", parseCategories(String(d.get("categories"))))
-          }
-        >
-          <label>
-            One rule per line: app or domain, category, match type
-            <textarea
-              name="categories"
-              rows={9}
-              defaultValue={data.categories
-                .map(
-                  (c) =>
-                    `${c.match}, ${c.category}, ${c.match_kind || "contains"}`,
-                )
-                .join("\n")}
-            />
-          </label>
-          <p className="help">
-            Categories: productive, neutral, unproductive. Match types:
-            contains, exact. Rules apply in order.
-          </p>
-        </Form>
-      );
+      content = <ClassificationEditor initial={data.categories} events={data.report.events} save={rules=>save('categories',rules)} />;
       break;
     case "password":
       content = (

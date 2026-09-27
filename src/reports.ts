@@ -110,7 +110,7 @@ export function exportRows(
           "Category",
           "Seconds",
         ],
-        ...groupEvents(data.report.events, "usage").map((e) => [
+        ...groupEvents(data.report.usage_events || data.report.events, "usage").map((e) => [
           e.employee_id,
           e.employee_name,
           e.app,
@@ -122,7 +122,7 @@ export function exportRows(
     case "projects":
       return [
         ["Employee ID", "Project", "Task", "Seconds"],
-        ...groupEvents(data.report.events, "projects").map((e) => [
+        ...groupEvents(data.report.usage_events || data.report.events, "projects").map((e) => [
           e.employee_id,
           e.project,
           e.task,
@@ -166,7 +166,7 @@ export function exportRows(
           "Idle h",
           "Locked h",
           "Private h",
-          "Unknown h",
+          "Unknown h", "Productive h", "Neutral h", "Unproductive h", "Unrated h", "Credited h", "Required h", "Remaining h", "Lunch h", "Break h", "Break overrun h",
         ],
         ...data.report.attendance.map((a) => [
           a.date,
@@ -175,6 +175,7 @@ export function exportRows(
           timeText(a.first),
           timeText(a.last),
           ...timeKeys.map((k) => hours(a[k])),
+          ...(['productive','neutral','unproductive','unrated','credited','required','remaining','lunch','break','break_overrun'] as const).map(k=>hours(a[k] || 0)),
         ]),
       ];
   }

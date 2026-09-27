@@ -1004,3 +1004,11 @@ progress::-moz-progress-bar {
     color: #f3edff;
   }
 }
+
+.work-summary { margin-bottom: 24px; }
+.work-counters {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#ebe4f4;}
+.work-counters>div {background:white;padding:22px;display:flex;flex-direction:column;gap:10px;}
+.work-counters span {font-size:13px;color:#706780}.work-counters strong {font-size:25px;color:#53299b;}
+.classification-rule {margin:16px 0;display:grid;gap:12px;padding:16px;border:1px solid #ddd2ef;border-radius:10px;}
+.catalog-list {display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;max-height:180px;overflow:auto;}
+@media(max-width:700px){.work-counters{grid-template-columns:repeat(2,minmax(0,1fr));}}

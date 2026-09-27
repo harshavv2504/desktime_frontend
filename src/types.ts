@@ -37,6 +37,10 @@ export interface Activity extends Employee {
   category: string;
 }
 export interface Attendance extends Employee {
+  productive?: number; neutral?: number; unproductive?: number; unrated?: number;
+  credited?: number; required?: number; remaining?: number; overtime?: number;
+  lunch?: number; break?: number; paid_break?: number; break_overrun?: number;
+  productivity?: number | null; effectiveness?: number | null; shortfall?: number;
   date: string;
   first: string | null;
   last: string | null;
@@ -47,6 +51,7 @@ export interface Attendance extends Employee {
   unknown: number;
 }
 export interface Report {
+  usage_events?: Activity[];
   events: Activity[];
   attendance: Attendance[];
 }
@@ -56,6 +61,9 @@ export interface Shot {
   time: string;
 }
 export interface Policy {
+  minimum_minutes?: number; credit_idle?: boolean;
+  lunch_minutes?: number; lunch_paid?: boolean;
+  break_minutes?: number; break_paid?: boolean;
   work_start: string;
   work_end: string;
   work_days: number[];
@@ -68,8 +76,10 @@ export interface Policy {
 }
 export interface Category {
   match: string;
-  category: "productive" | "neutral" | "unproductive";
-  match_kind?: "contains" | "exact";
+  category: "productive" | "neutral" | "unproductive" | "unrated";
+  target?: "any" | "app" | "domain";
+  employee_id?: string;
+  match_kind?: "contains" | "exact" | "domain";
 }
 export interface Workspace {
   devices: Device[];
