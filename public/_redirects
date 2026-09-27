@@ -1,2 +1,2 @@
-/api/* https://api.example.com/api/:splat 200!
-/downloads/* https://api.example.com/downloads/:splat 200!
+/api/* https://desktime-backend-396091833721.asia-south1.run.app/api/:splat 200!
+/downloads/* https://desktime-backend-396091833721.asia-south1.run.app/downloads/:splat 200!

@@ -9,8 +9,8 @@
     }
     @backend path /api/* /downloads/*
     handle @backend {
-        reverse_proxy https://api.example.com {
-            header_up Host api.example.com
+        reverse_proxy https://desktime-backend-396091833721.asia-south1.run.app {
+            header_up Host desktime-backend-396091833721.asia-south1.run.app
         }
     }
     handle {

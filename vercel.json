@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://api.example.com/api/:path*"
+      "destination": "https://desktime-backend-396091833721.asia-south1.run.app/api/:path*"
     },
     {
       "source": "/downloads/:path*",
-      "destination": "https://api.example.com/downloads/:path*"
+      "destination": "https://desktime-backend-396091833721.asia-south1.run.app/downloads/:path*"
     }
   ],
   "headers": [
