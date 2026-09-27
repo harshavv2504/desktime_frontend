@@ -1,17 +1,34 @@
-# Independent Desk Time frontend
+# Desk Time manager dashboard
 
-This package targets backend `https://api.example.com`. It contains no database or Storage credentials.
+React 19, TypeScript and Vite. Includes cookie-authenticated manager login, employee enrollment and revocation, attendance, application and website reports, activity timelines, project reports, CSV export, screenshot viewing, work policy settings, classification rules and account administration.
 
-On the backend, set DESKTIME_FRONTEND_URL to the exact dashboard HTTPS origin and restart it. Keep DESKTIME_PUBLIC_URL set to the backend HTTPS origin; employee apps connect to that backend URL.
+## Development
 
-Vercel (selected hosting): Import this directory as its own Vercel project, framework preset Other, no build command, output directory public. The included vercel.json forwards /api and /downloads. Add your domain in Project Settings > Domains and apply the DNS records Vercel supplies. Do not upload the main backend repository or secrets. Configure DESKTIME_FRONTEND_URL for the production domain before signing in; preview domains are intentionally not authorized.
+Use Node 24 and run:
 
-Option A: Deploy this directory to Netlify with publish directory `public` and no build command, or upload the contents of `public`. The included _redirects forwards /api and /downloads. Add your custom domain through your host, then set the DNS records it provides. Configure DESKTIME_FRONTEND_URL for that custom domain before signing in.
+```sh
+npm ci
+npm run dev
+```
 
-Option B: On a separate Docker server, copy .env.example to .env, set DESKTIME_FRONTEND_DOMAIN to your dashboard hostname, point its DNS to that server, allow 80/443, and run `docker compose up -d --build`. Caddy serves the static dashboard and forwards API/download requests to the backend.
+Vite forwards `/api` and `/downloads` to the local Python backend at `http://127.0.0.1:8765`. Configure that backend with `DESKTIME_FRONTEND_URL=http://localhost:5173` and local development cookie settings. Open the dashboard at `http://localhost:5173`.
 
-Other hosts must provide equivalent reverse-proxy rewrites for /api/* and /downloads/*, preserving methods, paths, query strings, request bodies, Origin, Cookie and Set-Cookie. Disable caching of those responses. A redirect (301/302) is not a proxy rewrite. Static-only hosts without proxy support cannot run this authentication setup on their own.
+```sh
+npm test
+npm run build
+```
 
-The browser makes same-origin requests to your dashboard; the frontend host forwards them server-to-server. HttpOnly, Secure, SameSite=Strict cookies and CSRF checks remain enabled. Do not add database credentials, Supabase keys or administrator passwords to this package.
+The production bundle is generated in `dist/`. Component tests use mocked API responses; live deployment integration requires the actual backend URL.
 
-Full deployment and screenshot steps are in SPLIT-HOSTING.md and SCREENSHOT-STORAGE.md in the main project.
+## Vercel + Google Cloud Run
+
+1. Import this repository into Vercel. Use **Vite**, install command `npm ci`, build command `npm run build`, output `dist`.
+2. Replace **both** `https://api.example.com` destinations in `vercel.json` with your Cloud Run HTTPS origin. This placeholder cannot sign in.
+3. On Cloud Run, set `DESKTIME_FRONTEND_URL` to the exact stable Vercel production origin and `DESKTIME_PUBLIC_URL` to the Cloud Run origin. Redeploy both services.
+4. Add your custom domain later in Vercel and update the backend's frontend origin to match.
+
+The browser calls same-origin `/api/*`; Vercel forwards requests and cookies to Cloud Run. HttpOnly/Secure/SameSite cookies and CSRF checks remain enabled. No database credentials, Supabase secret keys or manager passwords belong in frontend environment variables or source files. Employee apps connect directly to the backend.
+
+For optional Netlify deployment, the build output is also `dist`; update `public/_redirects`. For Docker/Caddy, update the upstream in `Caddyfile`, configure `.env` from `.env.example`, and run `docker compose up -d --build`.
+
+Source lives in `src/`; the old vanilla JavaScript dashboard is removed from this repository. Screenshot storage setup is documented in `SCREENSHOT-STORAGE.md` in the backend repository.
