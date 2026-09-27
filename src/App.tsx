@@ -7,6 +7,7 @@ import {
   type FormEvent,
 } from "react";
 import { ApiError, errorMessage, requestApi } from "./api";
+import Icon from "./Icon";
 import {
   csvText,
   days,
@@ -155,7 +156,12 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
   return (
     <div className="login-layout">
       <section className="login-brand">
-        <div className="brand">Desk Time</div>
+        <div className="brand">
+          <span className="brand-mark">
+            <Icon name="clock" />
+          </span>
+          desktime<span className="brand-dot">.</span>
+        </div>
         <h1>A clear view of your team's workday.</h1>
         <p>Activity, attendance and application reports in one workspace.</p>
       </section>
@@ -267,10 +273,23 @@ function Reports({
             ["Active time", duration(totals[0])],
             ["Idle time", duration(totals[1])],
             ["Unknown time", duration(totals[4])],
-          ].map(([label, value]) => (
+          ].map(([label, value], index) => (
             <section className="metric" key={label}>
-              <span className="metric-label">{label}</span>
+              <span className="metric-label">
+                {label}
+                <Icon name={index === 0 ? "team" : "clock"} />
+              </span>
               <strong className="metric-value">{value}</strong>
+              <span className="metric-detail">
+                {
+                  [
+                    `${devices.length} enrolled devices · live status`,
+                    "Recorded activity in this period",
+                    "Time beyond the idle threshold",
+                    "Scheduled time without coverage",
+                  ][index]
+                }
+              </span>
             </section>
           ))}
         </div>
@@ -308,9 +327,43 @@ function Reports({
           </Card>
         </div>
         <Card title="Recorded time breakdown">
+          <div
+            className="distribution"
+            role="img"
+            aria-label={timeKeys
+              .map((key, i) => `${key}: ${duration(totals[i])}`)
+              .join(", ")}
+          >
+            {totals.some(Boolean) ? (
+              <svg
+                viewBox="0 0 1000 20"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                {totals.map((value, i) => {
+                  const total = totals.reduce((a, b) => a + b, 0);
+                  return (
+                    <rect
+                      key={i}
+                      className={`segment segment-${i}`}
+                      x={
+                        (1000 * totals.slice(0, i).reduce((a, b) => a + b, 0)) /
+                        total
+                      }
+                      y="0"
+                      width={(1000 * value) / total}
+                      height="20"
+                    />
+                  );
+                })}
+              </svg>
+            ) : (
+              <p>No recorded time in this period</p>
+            )}
+          </div>
           <div className="card-body time-breakdown">
             {timeKeys.map((k, i) => (
-              <div className="time-item" key={k}>
+              <div className={`time-item time-item-${i}`} key={k}>
                 <strong>{duration(totals[i])}</strong>
                 <span>{k === "paused" ? "Private / paused" : k}</span>
               </div>
@@ -1125,7 +1178,19 @@ export default function App() {
       {session ? (
         <div className="workspace">
           <aside className="sidebar">
-            <div className="brand">Desk Time</div>
+            <div className="brand">
+              <span className="brand-mark">
+                <Icon name="clock" />
+              </span>
+              desktime<span className="brand-dot">.</span>
+            </div>
+            <div className="workspace-label">
+              <span className="workspace-monogram">W</span>
+              <div>
+                My workspace<small>Manager console</small>
+              </div>
+            </div>
+            <div className="nav-heading">WORKSPACE</div>
             <nav aria-label="Workspace">
               {(Object.keys(titles) as View[]).map((v) => (
                 <button
@@ -1134,7 +1199,8 @@ export default function App() {
                   aria-current={view === v ? "page" : undefined}
                   onClick={() => setView(v)}
                 >
-                  {titles[v]}
+                  <Icon name={v} />
+                  <span>{titles[v]}</span>
                 </button>
               ))}
             </nav>
@@ -1158,8 +1224,10 @@ export default function App() {
           </aside>
           <main className="main">
             <header className="topbar">
-              <span>Workspace / {titles[view]}</span>
-              <span role="status">
+              <span className="breadcrumb">
+                Workspace <span>/</span> <strong>{titles[view]}</strong>
+              </span>
+              <span className="sync-indicator" role="status">
                 {loading
                   ? "Updating…"
                   : updated
@@ -1172,7 +1240,19 @@ export default function App() {
                 <div>
                   <h1>{titles[view]}</h1>
                   <p className="muted">
-                    Your team's activity during scheduled work hours.
+                    {
+                      {
+                        overview: "A closer look at your team’s workday.",
+                        team: "Your people, their devices, and the latest connection status.",
+                        attendance: "Work hours and attendance, day by day.",
+                        usage: "Understand where active time is spent.",
+                        timeline: "A chronological view of the workday.",
+                        projects: "See where your team’s time goes.",
+                        screenshots: "Review captures from opted-in employees.",
+                        settings:
+                          "Set up your workspace, work hours, and capture preferences.",
+                      }[view]
+                    }
                   </p>
                 </div>
                 <div className="heading-actions">
@@ -1182,6 +1262,7 @@ export default function App() {
                       disabled={!data || loading}
                       onClick={exportCSV}
                     >
+                      <Icon name="download" />
                       Export CSV
                     </button>
                   )}
@@ -1190,6 +1271,7 @@ export default function App() {
                     disabled={!data}
                     onClick={() => setModal({ kind: "invite" })}
                   >
+                    <Icon name="plus" />
                     Add employee
                   </button>
                 </div>
