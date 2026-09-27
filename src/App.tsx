@@ -49,16 +49,16 @@ function Card({
   children,
   action,
 }: {
-  title: string;
+  title?: string;
   children: ReactNode;
   action?: ReactNode;
 }) {
   return (
     <section className="card">
-      <div className="card-heading">
-        <h2>{title}</h2>
+      {(title || action) && <div className="card-heading">
+        {title && <h2>{title}</h2>}
         {action}
-      </div>
+      </div>}
       {children}
     </section>
   );
@@ -396,7 +396,7 @@ function Reports({
   }
   if (view === "team")
     return (
-      <Card title="Employee devices">
+      <Card>
         {team()}
         <p className="card-body help">
           Devices appear offline after 60 seconds without a heartbeat.
@@ -405,7 +405,7 @@ function Reports({
     );
   if (view === "attendance")
     return (
-      <Card title="Daily attendance">
+      <Card>
         <Table
           headers={[
             "Date",
@@ -434,7 +434,7 @@ function Reports({
     );
   if (view === "usage")
     return (
-      <Card title="Application & website usage">
+      <Card>
         <Table
           headers={[
             "Employee",
@@ -455,7 +455,7 @@ function Reports({
     );
   if (view === "timeline")
     return (
-      <Card title="Activity intervals">
+      <Card>
         <Table
           headers={[
             "Employee",
@@ -485,7 +485,7 @@ function Reports({
   if (view === "projects")
     return (
       <Card
-        title="Project time"
+       
         action={
           <button
             className="secondary"
@@ -524,7 +524,7 @@ function Reports({
       ))}
     </div>
   ) : (
-    <Card title="Captured screenshots">
+    <Card>
       <div className="empty">
         <strong>No screenshots in this period</strong>
         <p>
@@ -1263,7 +1263,7 @@ export default function App() {
           <main className="main">
             <header className="topbar">
               <span className="breadcrumb">
-                Workspace <span>/</span> <strong>{titles[view]}</strong>
+                Voicedots team workspace
               </span>
               <span className="sync-indicator" role="status">
                 {loading
