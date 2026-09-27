@@ -1,0 +1,22 @@
+{$DESKTIME_FRONTEND_DOMAIN} {
+    encode gzip zstd
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy same-origin
+        Cache-Control no-store
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    }
+    @backend path /api/* /downloads/*
+    handle @backend {
+        reverse_proxy https://api.example.com {
+            header_up Host api.example.com
+        }
+    }
+    handle {
+        root * /srv
+        file_server {
+            hide /srv/_redirects /srv/_headers
+        }
+    }
+}

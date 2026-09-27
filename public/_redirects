@@ -1,0 +1,2 @@
+/api/* https://api.example.com/api/:splat 200!
+/downloads/* https://api.example.com/downloads/:splat 200!

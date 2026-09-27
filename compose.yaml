@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build: .
+    restart: unless-stopped
+    environment:
+      DESKTIME_FRONTEND_DOMAIN: ${DESKTIME_FRONTEND_DOMAIN:?Set your dashboard hostname in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:
