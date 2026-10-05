@@ -61,3 +61,13 @@ it('drags a rated card back to Unrated and preserves its rule',async()=>{
  fireEvent.click(screen.getByRole('button',{name:'Save productivity rules'}));
  await waitFor(()=>expect(save).toHaveBeenCalledWith([{match:'Code.exe',target:'app',category:'unrated',match_kind:'exact'}]));
 });
+
+it('disables unchanged rules and disables again after saving',async()=>{
+ const save=vi.fn().mockResolvedValue({});
+ render(<ClassificationEditor initial={[]} events={[{state:'active',app:'Code.exe'}] as Activity[]} save={save}/>);
+ const button=screen.getByRole('button',{name:'Save productivity rules'});
+ expect(button).toBeDisabled();
+ fireEvent.keyDown(screen.getByLabelText('Move Code.exe'),{key:'1'});
+ expect(button).toBeEnabled();fireEvent.click(button);
+ await waitFor(()=>expect(button).toBeDisabled());
+});

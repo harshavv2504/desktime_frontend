@@ -1,3 +1,4 @@
+import { useFormChanges } from './useFormChanges';
 import { usePageNavigation } from './navigation';
 import { ActivityDetails, preciseTime } from './ActivityDetails';
 import TargetOverview from './TargetOverview';
@@ -133,15 +134,19 @@ function Form({
   submit: (data: FormData) => Promise<void>;
   label?: string;
 }) {
+  const changes=useFormChanges();
+  const onlyChanges=label.startsWith("Save");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if(busy || (onlyChanges&&!changes.dirty)) return;
     const data = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
     try {
       await submit(data);
+      changes.saved();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -149,14 +154,14 @@ function Form({
     }
   }
   return (
-    <form className="dialog-form" onSubmit={onSubmit}>
+    <form ref={changes.ref} onChange={changes.check} className="dialog-form" onSubmit={onSubmit}>
       {children}
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
-      <button className="primary" disabled={busy} type="submit">
+      <button className="primary" disabled={busy || (onlyChanges&&!changes.dirty)} type="submit">
         {busy ? "Working…" : label}
       </button>
     </form>
