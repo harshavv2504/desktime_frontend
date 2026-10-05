@@ -7,7 +7,7 @@ import type {Attendance, Activity} from '../types';
 it('uses summed denominators for team productivity and handles no data',()=>{
   const rows=[{active:3600,productive:1800,required:7200},{active:10800,productive:10800,required:14400}] as Attendance[];
   render(<WorkSummary rows={rows}/>);
-  expect(screen.getByText('87.5%')).toBeInTheDocument();
+  expect(screen.queryByText('87.5%')).not.toBeInTheDocument();
   expect(screen.getByText('58.3%')).toBeInTheDocument();
 });
 

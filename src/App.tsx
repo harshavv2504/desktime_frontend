@@ -520,7 +520,7 @@ function Settings({data,session,api,refresh,open,logout,notify}: {
         <Form key={JSON.stringify(p)} label="Save work policy" submit={async d=>{
           const body: Record<string,unknown>={work_start:d.get('work_start'),work_end:d.get('work_end'),work_days:d.getAll('day').map(Number),holidays:String(d.get('holidays')).split(/\s+/).filter(Boolean),minimum_minutes:Math.round(Number(d.get('minimum_hours'))*60)};
           for(const key of ['lunch_minutes','break_minutes','idle_seconds','retention_days','screenshot_seconds','screenshot_retention_days']) if(d.has(key))body[key]=Number(d.get(key));
-          for(const key of ['credit_idle','lunch_paid','break_paid'])body[key]=d.get(key)==='on';
+          for(const key of ['credit_idle','lunch_paid','break_paid'])body[key]=false;
           if(Number(body.screenshot_seconds)>0&&Number(body.screenshot_seconds)<60)throw Error('Screenshot interval must be 0 or at least 60 seconds.');
           if(!body.work_days || !(body.work_days as number[]).length)throw Error('Select at least one working day.');
           await api('policy',body);notify('Work policy saved.');refresh();
@@ -538,7 +538,7 @@ function Settings({data,session,api,refresh,open,logout,notify}: {
               <label>Lunch allowance<div className="input-unit"><input type="number" name="lunch_minutes" min={0} max={1440} required defaultValue={p.lunch_minutes||0}/><span>minutes</span></div></label>
               <label>Other break allowance<div className="input-unit"><input type="number" name="break_minutes" min={0} max={1440} required defaultValue={p.break_minutes||0}/><span>minutes</span></div></label>
             </div>
-            <div className="policy-toggles">{([['credit_idle','Count idle time toward work target','Include detected idle time in credited hours.'],['lunch_paid','Credit lunch up to the allowance','Lunch beyond the allowance remains uncredited.'],['break_paid','Credit other breaks up to the allowance','Additional break time remains uncredited.']] as const).map(([key,label,help])=><label className="switch-row" key={key}><span><strong>{label}</strong><small>{help}</small></span><input type="checkbox" name={key} defaultChecked={p[key]||false}/></label>)}</div>
+            <p className="policy-note">The daily target is net work time. Lunch, other breaks, idle, and paused time do not count toward it.</p>
           </div>
           <div id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" hidden={tab!=='capture'}>
             <div className="section-description"><h3>Activity & screenshots</h3><p>Choose when inactivity begins, how often screenshots are taken, and how long records stay available.</p></div>
