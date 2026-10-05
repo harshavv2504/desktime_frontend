@@ -1,21 +1,29 @@
 import type { Attendance } from './types';
 import { duration } from './reports';
 
-export default function WorkSummary({ rows }: { rows: Attendance[] }) {
+export default function WorkSummary({ rows, onRules, onSettings }: { rows: Attendance[]; onRules?: () => void; onSettings?: () => void }) {
   const sum = (key: keyof Attendance) => rows.reduce((n,r) => n + Number(r[key] || 0),0);
   const productive=sum('productive'), active=sum('active'), required=sum('required');
-  const metrics = [
-    ['Productive', duration(productive)], ['Neutral', duration(sum('neutral'))],
-    ['Unproductive', duration(sum('unproductive'))], ['Unrated', duration(sum('unrated'))],
-    ['Productivity', active ? `${(100*productive/active).toFixed(1)}%` : 'No activity'],
-    ['Effectiveness', required ? `${(100*productive/required).toFixed(1)}%` : 'Set minimum hours'],
-    ['Credited work', duration(sum('credited'))], ['Required work', required ? duration(required) : 'Not configured'],
-    ['Remaining target', duration(sum('remaining'))], ['Lunch', duration(sum('lunch'))],
-    ['Other breaks', duration(sum('break'))], ['Break overrun', duration(sum('break_overrun'))],
-  ];
+  const unrated=sum('unrated'), credited=sum('credited');
+  const categories = [['Productive', productive], ['Neutral',sum('neutral')], ['Unproductive',sum('unproductive')], ['Unrated',unrated]] as const;
   return <section className="card work-summary" aria-label="Productivity and work targets">
-    <div className="card-head"><h2>Productivity & work targets</h2></div>
-    <div className="work-counters">{metrics.map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
-    <p className="card-body help">Productivity = productive / active time. Effectiveness = productive / required time. Credited work includes active time, optional idle time and paid breaks up to daily allowances. Unrated apps need classification. Overlapping devices count once; the most recently started active sample determines classification. Targets cover all scheduled days in the selected range.</p>
+    <div className="card-heading"><h2>Productivity & work targets</h2>{onRules && <button className="text-button" onClick={onRules}>Manage productivity rules →</button>}</div>
+    <div className="productivity-layout">
+      <div className="productivity-score">
+        <span className="eyebrow">PRODUCTIVITY</span>
+        <strong>{active ? `${(100*productive/active).toFixed(1)}%` : '—'}</strong>
+        <p>{active ? 'Productive time / active time' : 'No active time in this period'}</p>
+        <div className="productivity-bar" aria-label="Active time by classification">{categories.map(([label,value])=><span key={label} className={label.toLowerCase()} style={{width: `${active ? value/active*100 : 0}%`}} />)}</div>
+        {unrated>0 && <div className="classification-prompt"><span>{duration(unrated)} needs classification.</span>{onRules && <button className="text-button" onClick={onRules}>Whitelist apps & sites</button>}</div>}
+      </div>
+      <div className="category-metrics">{categories.map(([label,value])=><div key={label}><span><i className={`status-dot ${label.toLowerCase()}`} />{label}</span><strong>{duration(value)}</strong></div>)}</div>
+      <div className="work-target">
+        <span className="eyebrow">WORK TARGET</span><strong>{duration(credited)} <small>credited</small></strong>
+        <progress aria-label="Work target progress" value={Math.min(credited,required)} max={required || 1} />
+        <p>{required ? `${duration(sum('remaining'))} remaining of ${duration(required)}` : 'Minimum work hours not configured'}</p>
+        {required ? <span className="help">Effectiveness <b>{(100*productive/required).toFixed(1)}%</b></span> : onSettings && <button className="text-button" onClick={onSettings}>Set work target →</button>}
+      </div>
+    </div>
+    <div className="break-summary"><span>Lunch <b>{duration(sum('lunch'))}</b></span><span>Other breaks <b>{duration(sum('break'))}</b></span><span>Break overrun <b>{duration(sum('break_overrun'))}</b></span><details><summary>How totals work</summary><p>Productivity is productive / active time. Effectiveness is productive / required time. Credited work includes active time and any idle or paid breaks allowed by your policy. Targets cover scheduled days in this date range. Overlapping devices count once.</p></details></div>
   </section>;
 }

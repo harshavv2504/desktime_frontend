@@ -19,7 +19,6 @@ import {
   exportRows,
   filterQuery,
   groupEvents,
-  hours,
   initials,
   istDate,
   statusOf,
@@ -42,6 +41,7 @@ const titles: Record<View, string> = {
   team: "Team & devices",
   attendance: "Attendance",
   usage: "Apps & websites",
+  productivity: "Productivity rules",
   timeline: "Activity timeline",
   projects: "Projects & tasks",
   screenshots: "Screenshots",
@@ -67,6 +67,9 @@ function Card({
   );
 }
 function Table({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
+  const [page, setPage] = useState(0);
+  const current=Math.min(page,Math.max(0,Math.ceil(rows.length/25)-1));
+
   return rows.length ? (
     <>
       <div className="table-wrap">
@@ -81,7 +84,7 @@ function Table({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.slice(0, 1500).map((r, i) => (
+            {rows.slice(current*25, current*25+25).map((r, i) => (
               <tr key={i}>
                 {r.map((c, j) => (
                   <td key={j}>{c}</td>
@@ -91,11 +94,7 @@ function Table({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
           </tbody>
         </table>
       </div>
-      {rows.length > 1500 && (
-        <p className="table-count">
-          Showing 1,500 rows. Export CSV for the complete result.
-        </p>
-      )}
+      <div className="table-pagination"><span>{current*25+1}–{Math.min(current*25+25,rows.length)} of {rows.length} records</span><div><button className="secondary" disabled={current===0} onClick={()=>setPage(current-1)}>Previous</button><button className="secondary" disabled={(current+1)*25>=rows.length} onClick={()=>setPage(current+1)}>Next</button></div></div>
     </>
   ) : (
     <div className="empty">
@@ -284,7 +283,15 @@ function Reports({
     const totals = timeKeys.map((k) =>
       data.report.attendance.reduce((s, r) => s + r[k], 0),
     );
-    const usage = groupEvents(data.report.usage_events || data.report.events, "usage").slice(0, 5);
+    const usageTotals=new Map<string,{app:string;domain:string;seconds:number}>();
+    for(const e of data.report.usage_events || data.report.events){
+      if(e.state!=='active')continue;
+      const key=e.domain || e.app;
+      const existing=usageTotals.get(key);
+      if(existing)existing.seconds+=e.seconds;
+      else usageTotals.set(key,{app:e.app,domain:e.domain,seconds:e.seconds});
+    }
+    const usage=[...usageTotals.values()].sort((a,b)=>b.seconds-a.seconds).slice(0,5);
     return (
       <>
         <div className="metrics">
@@ -318,7 +325,7 @@ function Reports({
             </section>
           ))}
         </div>
-        <WorkSummary rows={data.report.attendance} />
+        <WorkSummary rows={data.report.attendance} onRules={() => navigate("productivity")} onSettings={() => navigate("settings")} />
         <div className="grid-two">
           <Card
             title="Team at a glance"
@@ -409,37 +416,10 @@ function Reports({
       </Card>
     );
   if (view === "attendance")
-    return (
-      <Card>
-        <Table
-          headers={[
-            "Date",
-            "Employee",
-            "First activity (IST)",
-            "Last activity (IST)",
-            "Active h",
-            "Idle h",
-            "Locked h",
-            "Private h",
-            "Unknown h", "Credited h", "Required h", "Remaining h", "Productivity", "Lunch h", "Break h", "Overrun h",
-          ]}
-          rows={data.report.attendance.map((a) => [
-            a.date,
-            person(a),
-            timeText(a.first),
-            timeText(a.last),
-            ...timeKeys.map((k) => hours(a[k])),
-            hours(a.credited || 0), hours(a.required || 0), hours(a.remaining || 0),
-            a.productivity == null ? '?' : `${a.productivity.toFixed(1)}%`,
-            hours(a.lunch || 0), hours(a.break || 0), hours(a.break_overrun || 0),
-          ])}
-        />
-        <p className="card-body help">
-          Unknown time is not confirmed absence. Overlapping device intervals
-          count once.
-        </p>
-      </Card>
-    );
+    return <Card><Table headers={['Date','Employee','Active time','Work target','Remaining','Productivity','Details']} rows={data.report.attendance.map(a=>[
+      a.date,person(a),duration(a.active),<div className="stacked-cell"><strong>{duration(a.credited||0)}</strong><small>{a.required?`of ${duration(a.required)}`:'No target set'}</small></div>,a.required?duration(a.remaining||0):'—',a.productivity==null?'No activity':`${a.productivity.toFixed(1)}%`,
+      <details className="attendance-details"><summary>View breakdown</summary><dl>{[['First activity',timeText(a.first)],['Last activity',timeText(a.last)],['Idle',duration(a.idle)],['Locked',duration(a.locked)],['Private',duration(a.paused)],['Unknown',duration(a.unknown)],['Lunch',duration(a.lunch||0)],['Other breaks',duration(a.break||0)],['Break overrun',duration(a.break_overrun||0)]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></details>
+    ])}/><p className="card-body help">Unknown time is not confirmed absence. Overlapping device intervals count once. Export CSV for all time categories.</p></Card>;
   if (view === "usage")
     return (
       <Card action={<button className="secondary" onClick={() => open({ kind: "categories" })}>Manage classifications</button>}>
@@ -465,44 +445,14 @@ function Reports({
       </Card>
     );
   if (view === "timeline")
-    return (
-      <Card>
-        <div className="card-body">
-          <label><input type="checkbox" checked={reviewOnly} onChange={e => setReviewOnly(e.target.checked)} /> Only verification flags</label>
-          <p className="help">Needs verification means an observed input pattern, not proof of misconduct. Keyboard-only work and repetitive tasks can trigger flags. Work time and productivity are unchanged.</p>
-          <p className="help">Pointer rule: within 50 × 50 physical pixels for 5 minutes. Click rule: at least 30 clicks over 60 seconds, with 95% of intervals within ±15% (minimum 20ms). Flags require the updated employee app.</p>
-        </div>
-        <Table
-          headers={[
-            "Employee",
-            "Start (IST)",
-            "End (IST)",
-            "Application / website",
-            "Window / file context",
-            "State",
-            "Verification",
-            "Project",
-            "Task",
-            "Duration",
-          ]}
-          rows={[...data.report.events]
-            .filter(e => !reviewOnly || Boolean(e.verification_signals?.length))
-            .sort((a, b) => a.start.localeCompare(b.start))
-            .map((e) => [
-              person(e),
-              timeText(e.start),
-              timeText(e.end),
-              e.domain || e.app,
-              e.window_title || "Not available",
-              <Badge value={e.state} />,
-              e.verification_signals?.length ? <div className="verification-evidence"><strong>Needs verification</strong><small>{verificationText(e)}</small></div> : "No flag",
-              e.project || "—",
-              e.task || "—",
-              duration(e.seconds),
-            ])}
-        />
-      </Card>
-    );
+    return <Card>
+      <div className="timeline-toolbar"><label className="review-filter"><input type="checkbox" checked={reviewOnly} onChange={e=>setReviewOnly(e.target.checked)}/>Only verification flags</label><details><summary>About verification signals</summary><p>Needs verification means an observed input pattern, not proof of misconduct. Keyboard-only work and repetitive tasks can trigger flags. Work time and productivity are unchanged.</p><p>Pointer: within 50 × 50 pixels for 5 minutes. Clicks: 30 or more over 60 seconds, with 95% of intervals within ±15% (minimum 20ms). Requires the updated employee app.</p></details></div>
+      <Table headers={['Employee','Time (IST)','Application / website','Window / file context','State','Verification','Duration']} rows={[...data.report.events].filter(e=>!reviewOnly||Boolean(e.verification_signals?.length)).sort((a,b)=>a.start.localeCompare(b.start)).map(e=>[
+        person(e),<div className="stacked-cell"><strong>{timeText(e.start)}</strong><small>to {timeText(e.end)}</small></div>,e.domain||e.app,
+        <div className="window-context">{e.window_title||'Not available'}{(e.project||e.task)&&<small>{[e.project,e.task].filter(Boolean).join(' · ')}</small>}</div>,<Badge value={e.state}/>,
+        e.verification_signals?.length?<div className="verification-evidence"><strong>Needs verification</strong><small>{verificationText(e)}</small></div>:'No flag',duration(e.seconds)
+      ])}/>
+    </Card>;
   if (view === "projects")
     return (
       <Card
@@ -557,236 +507,53 @@ function Reports({
   );
 }
 
-function Settings({
-  data,
-  session,
-  api,
-  refresh,
-  open,
-  logout,
-  notify,
-}: {
-  data: Workspace;
-  session: Session;
-  api: RequestApi;
-  refresh: () => void;
-  open: (m: ModalState) => void;
-  logout: () => void;
-  notify: (s: string) => void;
+function Settings({data,session,api,refresh,open,logout,notify}: {
+  data: Workspace; session: Session; api: RequestApi; refresh: () => void;
+  open: (m: ModalState) => void; logout: () => void; notify: (s: string) => void;
 }) {
-  const p = data.policy;
-  return (
-    <div className="settings-grid">
-      <Card title="Work schedule & capture policy">
-        <div className="card-body">
-          <Form
-            key={JSON.stringify(p)}
-            label="Save schedule"
-            submit={async (d) => {
-              const body: Record<string, unknown> = {
-                work_start: d.get("work_start"),
-                work_end: d.get("work_end"),
-                work_days: d.getAll("day").map(Number),
-                holidays: String(d.get("holidays"))
-                  .split(/\s+/)
-                  .filter(Boolean),
-              };
-              for (const k of [
-                "minimum_minutes", "lunch_minutes", "break_minutes",
-                "idle_seconds",
-                "retention_days",
-                "screenshot_seconds",
-                "screenshot_retention_days",
-              ])
-                if (d.has(k)) body[k] = Number(d.get(k));
-              for (const k of ['credit_idle','lunch_paid','break_paid']) body[k] = d.get(k) === 'on';
-              if (
-                Number(body.screenshot_seconds) > 0 &&
-                Number(body.screenshot_seconds) < 60
-              )
-                throw new Error(
-                  "Screenshot interval must be 0 or at least 60 seconds.",
-                );
-              await api("policy", body);
-              notify("Schedule saved.");
-              refresh();
-            }}
-          >
-            <div className="form-grid">
-              <div className="form-section full">
-                <span>01</span>
-                <div>
-                  <h3>Working hours</h3>
-                  <p>
-                    Set the days and hours your team works. All times are IST.
-                  </p>
-                </div>
-              </div>
-              <label>
-                Workday starts (IST)
-                <input
-                  name="work_start"
-                  type="time"
-                  defaultValue={p.work_start}
-                  required
-                />
-              </label>
-              <label>
-                Workday ends (IST)
-                <input
-                  name="work_end"
-                  type="time"
-                  defaultValue={p.work_end}
-                  required
-                />
-              </label>
-              <fieldset className="full">
-                <legend>Workdays</legend>
-                <div className="check-grid">
-                  {days.map((day, i) => (
-                    <label key={day}>
-                      <input
-                        type="checkbox"
-                        name="day"
-                        value={i}
-                        defaultChecked={p.work_days.includes(i)}
-                      />
-                      {day}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <div className="form-section full">
-                <span>02</span>
-                <div>
-                  <h3>Activity & captures</h3>
-                  <p>
-                    Manage idle detection, screenshots, and how long records are
-                    kept.
-                  </p>
-                </div>
-              </div>
-              {(
-                [
-                  ["idle_seconds", "Idle threshold (seconds)", 30, 3600],
-                  ["retention_days", "Activity retention (days)", 1, 3650],
-                  [
-                    "screenshot_retention_days",
-                    "Screenshot retention (days)",
-                    1,
-                    365,
-                  ],
-                  [
-                    "screenshot_seconds",
-                    "Screenshot interval (seconds; 0 = off)",
-                    0,
-                    3600,
-                  ],
-                ] as const
-              ).map(
-                ([key, label, min, max]) =>
-                  p[key] !== undefined && (
-                    <label key={key}>
-                      {label}
-                      <input
-                        type="number"
-                        name={key}
-                        min={min}
-                        max={max}
-                        defaultValue={p[key]}
-                        required
-                      />
-                    </label>
-                  ),
-              )}
-              <fieldset className="full">
-                <legend>Work targets, lunch & breaks</legend>
-                <p className="help">Daily allowances in minutes. Zero disables a break or leaves the work target unconfigured. Break overrun is unpaid. These settings apply from today.</p>
-                {([['minimum_minutes','Minimum work per day'],['lunch_minutes','Lunch allowance per day'],['break_minutes','Other break allowance per day']] as const).map(([key,label])=><label key={key}>{label}<input type="number" name={key} min={0} max={1440} step={1} required defaultValue={p[key] || 0}/></label>)}
-                {([['credit_idle','Count idle time toward work target'],['lunch_paid','Credit lunch up to the allowance'],['break_paid','Credit other breaks up to the allowance']] as const).map(([key,label])=><label key={key}><input type="checkbox" name={key} defaultChecked={p[key] || false}/>{label}</label>)}
-              </fieldset>
-              <label className="full">
-                Holidays (one YYYY-MM-DD per line)
-                <textarea
-                  name="holidays"
-                  rows={3}
-                  defaultValue={p.holidays.join("\n")}
-                />
-              </label>
-            </div>
-            <p className="help">
-              Screenshots are manager-controlled. Enabled intervals must be
-              60–3,600 seconds.
-            </p>
-          </Form>
-        </div>
-      </Card>
-      <div>
-        <Card title="Employee setup">
-          <div className="card-body">
-            <label>
-              Employee server address
-              <input readOnly value={session.server_url} />
-            </label>
-            <div className="form-actions">
-              <button
-                className="primary"
-                onClick={() => open({ kind: "invite" })}
-              >
-                Add employee
-              </button>
-              <a href="/downloads/DeskTime-Employee.exe">
-                Download employee EXE
-              </a>
-            </div>
-            <p className="help">
-              Chrome and Edge website tracking is built into the employee EXE.
-            </p>
-          </div>
-        </Card>
-        <Card title="Projects & classification">
-          <div className="card-body form-actions">
-            <button
-              className="secondary"
-              onClick={() => open({ kind: "projects" })}
-            >
-              Edit projects
-            </button>
-            <button
-              className="secondary"
-              onClick={() => open({ kind: "categories" })}
-            >
-              Edit categories
-            </button>
-          </div>
-        </Card>
-        <Card title="Manager account">
-          <div className="card-body">
-            <p>
-              Signed in as <strong>{session.username}</strong>
-            </p>
-            <div className="form-actions">
-              <button
-                className="secondary"
-                onClick={() => open({ kind: "password" })}
-              >
-                Change password
-              </button>
-              <button
-                className="text-button"
-                onClick={() => open({ kind: "audit" })}
-              >
-                View audit log
-              </button>
-              <button className="text-button" onClick={logout}>
-                Sign out
-              </button>
+  const p=data.policy;
+  const [tab,setTab]=useState('schedule');
+  return <div className="settings-grid">
+    <Card title="Work policy">
+      <div className="settings-tabs" role="tablist" aria-label="Work policy sections">{[['schedule','Working hours'],['targets','Targets & breaks'],['capture','Tracking & storage']].map(([id,label])=><button key={id} type="button" role="tab" aria-selected={tab===id} aria-controls={`panel-${id}`} id={`tab-${id}`} className={tab===id?'selected':''} onClick={()=>setTab(id)}>{label}</button>)}</div>
+      <div className="card-body">
+        <Form key={JSON.stringify(p)} label="Save work policy" submit={async d=>{
+          const body: Record<string,unknown>={work_start:d.get('work_start'),work_end:d.get('work_end'),work_days:d.getAll('day').map(Number),holidays:String(d.get('holidays')).split(/\s+/).filter(Boolean),minimum_minutes:Math.round(Number(d.get('minimum_hours'))*60)};
+          for(const key of ['lunch_minutes','break_minutes','idle_seconds','retention_days','screenshot_seconds','screenshot_retention_days']) if(d.has(key))body[key]=Number(d.get(key));
+          for(const key of ['credit_idle','lunch_paid','break_paid'])body[key]=d.get(key)==='on';
+          if(Number(body.screenshot_seconds)>0&&Number(body.screenshot_seconds)<60)throw Error('Screenshot interval must be 0 or at least 60 seconds.');
+          if(!body.work_days || !(body.work_days as number[]).length)throw Error('Select at least one working day.');
+          await api('policy',body);notify('Work policy saved.');refresh();
+        }}>
+          <div id="panel-schedule" role="tabpanel" aria-labelledby="tab-schedule" hidden={tab!=='schedule'}>
+            <div className="section-description"><h3>Your team’s schedule</h3><p>Tracking follows these working days and hours. All times are India Standard Time.</p></div>
+            <div className="form-grid"><label>Workday starts (IST)<input name="work_start" type="time" defaultValue={p.work_start} required /></label><label>Workday ends (IST)<input name="work_end" type="time" defaultValue={p.work_end} required /></label>
+              <fieldset className="full"><legend>Working days</legend><div className="check-grid">{days.map((day,i)=><label key={day}><input type="checkbox" name="day" value={i} defaultChecked={p.work_days.includes(i)}/>{day}</label>)}</div></fieldset>
+              <label className="full">Holidays<textarea name="holidays" rows={4} placeholder="2026-12-25" defaultValue={p.holidays.join('\n')}/><small>One date per line, in YYYY-MM-DD format.</small></label>
             </div>
           </div>
-        </Card>
+          <div id="panel-targets" role="tabpanel" aria-labelledby="tab-targets" hidden={tab!=='targets'}>
+            <div className="section-description"><h3>Daily goals, lunch & breaks</h3><p>Set a work target in hours and break allowances in minutes. Changes apply from today.</p></div>
+            <div className="form-grid"><label className="full">Minimum work hours per day<div className="input-unit"><input type="number" name="minimum_hours" min={0} max={24} step="any" required defaultValue={(p.minimum_minutes||0)/60}/><span>hours / day</span></div><small>0 leaves the target unconfigured.</small></label>
+              <label>Lunch allowance<div className="input-unit"><input type="number" name="lunch_minutes" min={0} max={1440} required defaultValue={p.lunch_minutes||0}/><span>minutes</span></div></label>
+              <label>Other break allowance<div className="input-unit"><input type="number" name="break_minutes" min={0} max={1440} required defaultValue={p.break_minutes||0}/><span>minutes</span></div></label>
+            </div>
+            <div className="policy-toggles">{([['credit_idle','Count idle time toward work target','Include detected idle time in credited hours.'],['lunch_paid','Credit lunch up to the allowance','Lunch beyond the allowance remains uncredited.'],['break_paid','Credit other breaks up to the allowance','Additional break time remains uncredited.']] as const).map(([key,label,help])=><label className="switch-row" key={key}><span><strong>{label}</strong><small>{help}</small></span><input type="checkbox" name={key} defaultChecked={p[key]||false}/></label>)}</div>
+          </div>
+          <div id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" hidden={tab!=='capture'}>
+            <div className="section-description"><h3>Activity & screenshots</h3><p>Choose when inactivity begins, how often screenshots are taken, and how long records stay available.</p></div>
+            <div className="form-grid">{([['idle_seconds','Idle threshold',30,3600,'seconds'],['screenshot_seconds','Screenshot interval',0,3600,'seconds'],['retention_days','Activity retention',1,3650,'days'],['screenshot_retention_days','Screenshot retention',1,365,'days']] as const).map(([key,label,min,max,unit])=>p[key]!==undefined&&<label key={key}>{label}<div className="input-unit"><input type="number" name={key} min={min} max={max} required defaultValue={p[key]}/><span>{unit}</span></div></label>)}</div>
+            <p className="inline-note">Screenshots are manager-controlled. Use 0 to disable, or an interval of 60–3,600 seconds. Capture stops during breaks and outside work hours.</p>
+          </div>
+        </Form>
       </div>
+    </Card>
+    <div className="settings-aside">
+      <Card title="Connect an employee"><div className="card-body"><p className="help">Create a one-time enrollment code, then install the employee app on their Windows laptop.</p><div className="form-actions"><button className="primary" onClick={()=>open({kind:'invite'})}>Add employee</button><a className="secondary" href="/downloads/DeskTime-Employee.exe">Download EXE</a></div><details className="server-details"><summary>Employee server address</summary><input aria-label="Employee server address" readOnly value={session.server_url}/></details></div></Card>
+      <Card title="Productivity & projects"><div className="card-body"><p className="help">Classify work apps and websites to make productivity reports meaningful.</p><div className="stack-actions"><button className="secondary" onClick={()=>open({kind:'categories'})}>Whitelist apps & sites →</button><button className="secondary" onClick={()=>open({kind:'projects'})}>Manage projects</button></div></div></Card>
+      <Card title="Manager account"><div className="card-body"><div className="account-line"><span className="avatar">{initials(session.username)}</span><div><strong>{session.username}</strong><small>Workspace administrator</small></div></div><div className="form-actions"><button className="secondary" onClick={()=>open({kind:'password'})}>Change password</button><button className="text-button" onClick={()=>open({kind:'audit'})}>View audit log</button><button className="text-button" onClick={logout}>Sign out</button></div></div></Card>
     </div>
-  );
+  </div>;
 }
 
 export function parseCategories(value: string): Category[] {
@@ -871,7 +638,7 @@ function Dialog({
   const title = {
     invite: code ? "Ready to connect" : "Add an employee",
     projects: "Manage projects",
-    categories: "Application & website categories",
+    categories: "Productivity rules & whitelist",
     password: "Change manager password",
     revoke: "Revoke device access",
     audit: "Administration audit",
@@ -1053,7 +820,7 @@ function Dialog({
   return (
     <dialog
       ref={ref}
-      className={["audit", "shot"].includes(modal.kind) ? "wide" : ""}
+      className={["audit", "shot", "categories"].includes(modal.kind) ? "wide" : ""}
       aria-labelledby="dialog-title"
       onCancel={close}
     >
@@ -1173,7 +940,7 @@ export default function App() {
         session &&
         !document.hidden &&
         !modal &&
-        view !== "settings" &&
+        !["settings", "productivity"].includes(view) &&
         !loading
       )
         refresh();
@@ -1288,6 +1055,7 @@ export default function App() {
                         team: "Your people, their devices, and the latest connection status.",
                         attendance: "Work hours and attendance, day by day.",
                         usage: "Understand where active time is spent.",
+                        productivity: "Whitelist work apps and sites. Turn activity into meaningful productivity reports.",
                         timeline: "A chronological view of the workday.",
                         projects: "See where your team’s time goes.",
                         screenshots: "Review captures from employees under your screenshot policy.",
@@ -1298,7 +1066,7 @@ export default function App() {
                   </p>
                 </div>
                 <div className="heading-actions">
-                  {!["settings", "screenshots"].includes(view) && (
+                  {!["settings", "screenshots", "productivity"].includes(view) && (
                     <button
                       className="secondary"
                       disabled={!data || loading}
@@ -1318,7 +1086,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              {view !== "settings" && (
+              {!["settings", "productivity"].includes(view) && (
                 <form
                   className="filter-bar"
                   onSubmit={(e) => {
@@ -1403,6 +1171,8 @@ export default function App() {
                     logout={logout}
                     notify={setToast}
                   />
+                ) : view === "productivity" ? (
+                  <Card><ClassificationEditor key={JSON.stringify(data.categories)} initial={data.categories} events={data.report.events} save={async rules => {await api('categories',rules);setToast('Productivity rules saved. Reports recalculated.');refresh();}} /></Card>
                 ) : (
                   <Reports
                     view={view}

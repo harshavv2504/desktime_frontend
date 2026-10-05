@@ -3,6 +3,7 @@ export type View =
   | "team"
   | "attendance"
   | "usage"
+  | "productivity"
   | "timeline"
   | "projects"
   | "screenshots"

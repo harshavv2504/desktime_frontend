@@ -161,11 +161,12 @@ describe("React dashboard", () => {
     ).toHaveAttribute("src", "data:image/jpeg;base64,aGVsbG8=");
     fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
     fireEvent.click(screen.getByRole("button", { name: "Workspace settings" }));
-    fireEvent.change(screen.getByLabelText("Idle threshold (seconds)"), {
+    fireEvent.click(screen.getByRole("tab", {name:"Tracking & storage"}));
+    fireEvent.change(screen.getByLabelText(/Idle threshold/), {
       target: { value: "180" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
-    await screen.findByText("Schedule saved.");
+    fireEvent.click(screen.getByRole("button", { name: "Save work policy" }));
+    await screen.findByText("Work policy saved.");
     const request = fetcher.mock.calls.find(
       ([url, opts]) => url === "/api/policy" && opts?.method === "POST",
     )![1]!;
