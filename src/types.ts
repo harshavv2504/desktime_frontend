@@ -24,6 +24,7 @@ export interface Device extends Employee {
   app: string;
 }
 export interface Activity extends Employee {
+  window_title?: string;
   id: string;
   device_id: string;
   start: string;
