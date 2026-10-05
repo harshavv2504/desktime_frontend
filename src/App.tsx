@@ -150,7 +150,7 @@ function Form({
         </p>
       )}
       <button className="primary" disabled={busy} type="submit">
-        {busy ? "Working…" : label}
+        {busy ? "Workingâ€¦" : label}
       </button>
     </form>
   );
@@ -184,7 +184,7 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
               <strong>Projects & reports</strong>
             </div>
           </div>
-          <p className="login-brand-footer">Voicedots · Team operations</p>
+          <p className="login-brand-footer">Voicedots Â· Team operations</p>
         </div>
       </section>
       <main className="login-main">
@@ -263,7 +263,7 @@ function Reports({
           : [
               person(d),
               <Badge value={statusOf(d)} />,
-              d.app || "—",
+              d.app || "â€”",
               timeText(d.last_seen),
               <span title={d.id}>{d.id.slice(0, 8)}</span>,
               !d.revoked && (
@@ -306,7 +306,7 @@ function Reports({
               <span className="metric-detail">
                 {
                   [
-                    `${devices.length} enrolled devices · live status`,
+                    `${devices.length} enrolled devices Â· live status`,
                     "Recorded activity in this period",
                     "Time beyond the idle threshold",
                     "Scheduled time without coverage",
@@ -322,7 +322,7 @@ function Reports({
             title="Team at a glance"
             action={
               <button className="text-button" onClick={() => navigate("team")}>
-                View team →
+                View team â†’
               </button>
             }
           >
@@ -452,7 +452,7 @@ function Reports({
           rows={groupEvents(data.report.usage_events || data.report.events, "usage").map((e) => [
             person(e),
             e.app,
-            e.domain || "—",
+            e.domain || "â€”",
             <Badge value={e.category} />,
             duration(e.seconds),
           ])}
@@ -481,8 +481,8 @@ function Reports({
               timeText(e.end),
               e.domain || e.app,
               <Badge value={e.state} />,
-              e.project || "—",
-              e.task || "—",
+              e.project || "â€”",
+              e.task || "â€”",
               duration(e.seconds),
             ])}
         />
@@ -506,7 +506,7 @@ function Reports({
           rows={groupEvents(data.report.usage_events || data.report.events, "projects").map((e) => [
             person(e),
             e.project || "Unassigned",
-            e.task || "—",
+            e.task || "â€”",
             duration(e.seconds),
           ])}
         />
@@ -521,11 +521,11 @@ function Reports({
           onClick={() => open({ kind: "shot", shot: s })}
         >
           <span className="photo-placeholder" aria-hidden>
-            ▧
+            â–§
           </span>
           <strong>{s.employee_id}</strong>
           <small>{timeText(s.time)} IST</small>
-          <small>Open screenshot →</small>
+          <small>Open screenshot â†’</small>
         </button>
       ))}
     </div>
@@ -534,7 +534,7 @@ function Reports({
       <div className="empty">
         <strong>No screenshots in this period</strong>
         <p>
-          Captures require a screenshot policy and employee opt-in. They remain
+          Captures follow the manager-controlled screenshot policy. They remain
           off by default.
         </p>
       </div>
@@ -700,8 +700,8 @@ function Settings({
               </label>
             </div>
             <p className="help">
-              Screenshots require employee opt-in. Enabled intervals must be
-              60–3,600 seconds.
+              Screenshots are manager-controlled. Enabled intervals must be
+              60â€“3,600 seconds.
             </p>
           </Form>
         </div>
@@ -1020,7 +1020,7 @@ function Dialog({
           ])}
         />
       ) : (
-        <p>Loading audit records…</p>
+        <p>Loading audit recordsâ€¦</p>
       );
       break;
     case "shot":
@@ -1031,7 +1031,7 @@ function Dialog({
           src={`data:image/${loaded.image.startsWith("iVBOR") ? "png" : "jpeg"};base64,${loaded.image}`}
         />
       ) : (
-        <p>Loading capture…</p>
+        <p>Loading captureâ€¦</p>
       );
       break;
   }
@@ -1049,7 +1049,7 @@ function Dialog({
           aria-label="Close dialog"
           onClick={close}
         >
-          ×
+          Ã—
         </button>
       </div>
       <div className="dialog-body">
@@ -1199,7 +1199,7 @@ export default function App() {
   if (checking)
     return (
       <main className="loading" role="status">
-        Opening workspace…
+        Opening workspaceâ€¦
       </main>
     );
   return (
@@ -1235,9 +1235,9 @@ export default function App() {
               {data && (
                 <>
                   <strong>
-                    {data.policy.work_start}–{data.policy.work_end} IST
+                    {data.policy.work_start}â€“{data.policy.work_end} IST
                   </strong>
-                  <p>{data.policy.work_days.map((d) => days[d]).join(" · ")}</p>
+                  <p>{data.policy.work_days.map((d) => days[d]).join(" Â· ")}</p>
                 </>
               )}
               <div className="profile">
@@ -1256,7 +1256,7 @@ export default function App() {
               </span>
               <span className="sync-indicator" role="status">
                 {loading
-                  ? "Updating…"
+                  ? "Updatingâ€¦"
                   : updated
                     ? `Updated ${updated} IST`
                     : "Sync unavailable"}
@@ -1269,13 +1269,13 @@ export default function App() {
                   <p className="muted">
                     {
                       {
-                        overview: "A closer look at your team’s workday.",
+                        overview: "A closer look at your teamâ€™s workday.",
                         team: "Your people, their devices, and the latest connection status.",
                         attendance: "Work hours and attendance, day by day.",
                         usage: "Understand where active time is spent.",
                         timeline: "A chronological view of the workday.",
-                        projects: "See where your team’s time goes.",
-                        screenshots: "Review captures from opted-in employees.",
+                        projects: "See where your teamâ€™s time goes.",
+                        screenshots: "Review captures from employees under your screenshot policy.",
                         settings:
                           "Set up your workspace, work hours, and capture preferences.",
                       }[view]
@@ -1400,7 +1400,7 @@ export default function App() {
               ) : (
                 <p className="loading">
                   {loading
-                    ? "Loading your workspace…"
+                    ? "Loading your workspaceâ€¦"
                     : "Workspace data is unavailable."}
                 </p>
               )}
