@@ -193,8 +193,12 @@ export function exportRows(
 }
 
 export function verificationText(e: Activity): string {
-  return (e.verification_signals || []).map(s => s.kind === 'bounded_pointer'
+  return reviewSignals(e).map(s => s.kind === 'bounded_pointer'
     ? `Pointer within ${s.span_x_px} × ${s.span_y_px} px for ${Math.round(s.window_seconds)}s (${s.sample_count} samples)`
     : `${s.click_count} regular clicks over ${Math.round(s.window_seconds)}s; interval ${s.median_interval_ms}ms ± ${s.tolerance_ms}ms; ${Math.round(s.regularity * 100)}% consistent`
   ).join('; ');
+}
+
+export function reviewSignals(e:Activity){
+ return e.state==='active'?(e.verification_signals||[]).filter(s=>s.kind!=='bounded_pointer'||s.span_x_px>0||s.span_y_px>0):[];
 }

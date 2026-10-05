@@ -253,7 +253,7 @@ describe("React dashboard", () => {
     const workspace = {devices: [], report: {events: [row], attendance: []}, shots: [], policy: {} as import('../types').Policy, projects: [], categories: []};
     const rows = exportRows('timeline', workspace, '');
     expect(rows[0]).toContain('Verification evidence (review only)');
-    expect(rows[1]).toContain('Pointer within 0 × 0 px for 300s (61 samples)');
+    expect(rows[1]).not.toContain('Pointer within 0 × 0 px for 300s (61 samples)');
     expect(rows[1]).toContain(3600);
   });
 
