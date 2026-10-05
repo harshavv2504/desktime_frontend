@@ -1,3 +1,4 @@
+import { ActivityDetails, preciseTime } from './ActivityDetails';
 import TargetOverview from './TargetOverview';
 import ScreenshotGallery from './ScreenshotGallery';
 import Recordings from './Recordings';
@@ -322,7 +323,7 @@ function Reports({
             person(e),
             e.app,
             e.domain || "—",
-            <span className="window-context" title={e.window_title || undefined}>{e.window_title || "No context recorded"}</span>,
+            <ActivityDetails event={e} />,
             <Badge value={e.category} />,
             duration(e.seconds),
           ])}
@@ -334,8 +335,8 @@ function Reports({
     return <Card>
       <div className="timeline-toolbar"><label className="review-filter"><input type="checkbox" checked={reviewOnly} onChange={e=>{setReviewOnly(e.target.checked);if(e.target.checked&&signalType==='none')setSignalType('all');}}/>Only verification flags</label><label>Verification type<select aria-label="Verification type" value={signalType} onChange={e=>{setSignalType(e.target.value);if(e.target.value==='none')setReviewOnly(false);}}><option value="all">All patterns</option><option value="bounded_pointer">Restricted pointer movement</option><option value="regular_clicks">Regular click timing</option><option value="none">No verification flag</option></select></label><label>Activity state<select aria-label="Activity state" value={activityState} onChange={e=>setActivityState(e.target.value)}><option value="all">All activity</option><option value="active">Active</option><option value="idle">Idle</option><option value="paused">Paused</option><option value="locked">Locked</option></select></label><span className="help">{data.report.events.filter(e=>reviewSignals(e).length).length} flagged activities</span><details><summary>About verification signals</summary><p>Needs verification means an observed input pattern, not proof of misconduct. A stationary pointer and non-active periods are excluded. Repetitive tasks can still require review. Work time and productivity are unchanged.</p><p>Pointer: repeated movement within 50 × 50 pixels for 5 minutes. Clicks: 30 or more over 60 seconds, with 95% of intervals within ±15% (minimum 20ms). Requires the updated employee app.</p></details></div>
       <Table headers={['Employee','Time (IST)','Application / website','Window / file context','State','Verification','Duration']} rows={[...data.report.events].filter(e=>(activityState==='all'||e.state===activityState)&&(!reviewOnly||reviewSignals(e).length>0)&&(signalType==='all'||(signalType==='none'?reviewSignals(e).length===0:reviewSignals(e).some(s=>s.kind===signalType)))).sort((a,b)=>a.start.localeCompare(b.start)).map(e=>[
-        person(e),<div className="stacked-cell"><strong>{timeText(e.start)}</strong><small>to {timeText(e.end)}</small></div>,e.domain||e.app,
-        <div className="window-context">{e.window_title||'Not available'}{(e.project||e.task)&&<small>{[e.project,e.task].filter(Boolean).join(' · ')}</small>}</div>,<Badge value={e.state}/>,
+        person(e),<div className="stacked-cell"><strong>{preciseTime(e.start)}</strong><small>to {preciseTime(e.end)}</small></div>,e.domain||e.app,
+        <ActivityDetails event={e} />,<Badge value={e.state}/>,
         reviewSignals(e).length?<div className="verification-evidence"><strong>Needs verification</strong><small>{verificationText(e)}</small></div>:'No flag',duration(e.seconds)
       ])}/>
     </Card>;

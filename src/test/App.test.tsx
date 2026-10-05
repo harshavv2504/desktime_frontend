@@ -230,7 +230,7 @@ describe("React dashboard", () => {
     fireEvent.click(screen.getByRole('button', {name: 'Apps & websites'}));
     await screen.findByRole('columnheader', {name: 'Window / file context'});
     expect(screen.getByRole('button', {name: 'Manage classifications'})).toBeInTheDocument();
-    expect(screen.getByText('No context recorded')).toBeInTheDocument();
+    expect(screen.getByText('Window title not captured')).toBeInTheDocument();
     expect(document.body.textContent).not.toContain('\u00e2\u20ac');
   });
   it("shows review evidence and filters unflagged activity without changing durations", async () => {

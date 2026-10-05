@@ -1244,3 +1244,5 @@ dialog.wide {
 @media(max-width:1280px){.employee-captures{grid-template-columns:repeat(3,minmax(0,1fr))}.target-kpi{padding:16px}.target-kpi strong{font-size:26px}}
 
 .timeline-toolbar{flex-wrap:wrap;align-items:center;gap:16px}.timeline-toolbar>label:not(.review-filter){display:grid;gap:6px;min-width:180px;font-size:12px;color:#766783}.timeline-toolbar>details{margin-left:auto}.timeline-toolbar .review-filter{white-space:nowrap}
+
+.activity-context{display:grid;gap:6px;min-width:220px;max-width:460px;line-height:1.5;overflow-wrap:anywhere}.activity-context strong{font-size:13px;color:#27213c}.activity-context .context-path{font-size:12px}.activity-context details{font-size:11px;color:#726781}.activity-context summary{cursor:pointer}.activity-context details[open] span{display:block;padding-top:6px}.context-missing{color:#726781;font-style:italic}
