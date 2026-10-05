@@ -17,7 +17,7 @@ const events=Array.from({length:42},(_,i)=>({...devices[i%3],device_id:`device-$
 const attendance=devices.map((d,i)=>({...d,date:'2026-10-05',first:events[0].start,last:now,active:18000+i*1000,idle:800,locked:300,paused:1800,unknown:600,productive:14000,neutral:1500,unproductive:1000,unrated:1500+i*1000,credited:19000,required:28800,remaining:9800,productivity:72.5,effectiveness:48.6,lunch:1800,break:600,break_overrun:0}));
 const policy={work_start:'09:00',work_end:'18:45',work_days:[0,1,2,3,4,5],holidays:[],idle_seconds:300,retention_days:90,screenshot_seconds:300,screenshot_retention_days:30,minimum_minutes:480,lunch_minutes:30,break_minutes:15,credit_idle:false,lunch_paid:true,break_paid:false};
 let image='';
-await page.route('**/qa-video.mp4',async route=>route.fulfill({contentType:'video/mp4',body:await readFile(resolve('../../artifacts/recording-qa/synthetic-120s.mp4'))}));
+await page.route('**/qa-video.mp4',async route=>route.fulfill({contentType:'video/mp4',body:await readFile(resolve('tools/fixtures/recording.mp4'))}));
 await page.route('**/api/**',async route=>{
   const path=new URL(route.request().url()).pathname.split('/api/')[1];const post=route.request().method()==='POST';let status=200,data={};
   if(path==='session'&&!loggedIn){status=401;data={error:'Sign in required'};}
