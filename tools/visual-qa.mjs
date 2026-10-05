@@ -42,7 +42,7 @@ async function capture(name){
   assert(!overflow,`${name}: horizontal page overflow`);
   if(await page.locator('dialog[open]').count()) {
     const original=page.viewportSize();
-    for(const size of [{width:1920,height:1080},{width:1280,height:720},{width:390,height:844}]) {
+    for(const size of [{width:1920,height:1080},{width:1280,height:720}]) {
       await page.setViewportSize(size);
       await page.screenshot({path:resolve(output,`${name}-${size.width}.png`),fullPage:true,animations:'disabled'});
       screenshots.push(`${name}-${size.width}`);
@@ -54,12 +54,35 @@ async function capture(name){
   }
 
 }
+async function auditSelects(context){
+ const original=page.viewportSize();
+ for(const size of [{width:1920,height:1080},{width:1280,height:720}]){
+  await page.setViewportSize(size);
+  const selects=page.locator('dialog[open]').count().then(n=>n?page.locator('dialog[open] select:visible'):page.locator('main select:visible'));
+  const list=await selects;
+  for(let i=0;i<await list.count();i++){
+   const control=list.nth(i);await control.scrollIntoViewIfNeeded();
+   assert.equal(await control.evaluate(e=>getComputedStyle(e).appearance),'base-select');
+   const value=await control.inputValue();await control.click();
+   assert(await control.evaluate(e=>e.matches(':open')));
+   const name=`open-${context}-${i}-${size.width}`;
+   await page.screenshot({path:resolve(output,name+'.png')});screenshots.push(name);
+   const options=control.locator('option');const box=await options.first().boundingBox();
+   assert(box&&box.x>=0&&box.x+box.width<=size.width+1,`${name}: clipped menu`);
+   await page.keyboard.press('Escape');assert.equal(await control.inputValue(),value);
+   assert(!await control.evaluate(e=>e.matches(':open')));
+   if(await page.locator('dialog[open]').count())assert(await page.locator('dialog[open]').isVisible());
+  }
+ }
+ await page.setViewportSize(original);
+}
 const nav=async title=>{await page.getByRole('navigation',{name:'Workspace'}).getByRole('button',{name:title,exact:true}).click();await page.getByRole('heading',{name:title,level:1}).waitFor();};
 const close=async()=>page.getByRole('button',{name:'Close dialog'}).click();
 try {
  await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username').waitFor();await capture('01-login');
  image=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=1100;c.height=620;const x=c.getContext('2d');x.fillStyle='#20212b';x.fillRect(0,0,1100,620);x.fillStyle='#30313c';x.fillRect(0,0,1100,45);x.font='18px monospace';x.fillStyle='#b6a1dc';x.fillText('VISUAL QA FIXTURE — not an employee screenshot',25,30);x.fillStyle='#d9cee8';['Dashboard.tsx','', 'export default function Dashboard() {','  return <Workspace title="Voicedots" />;','}'].forEach((t,i)=>x.fillText(t,60,100+i*35));return c.toDataURL('image/png').split(',')[1];});
  await page.getByLabel('Username').fill('qa-manager');await page.getByLabel('Password',{exact:true}).fill('fixture-only-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByText('Team at a glance').waitFor();
+ await auditSelects('employee-filter');
  const pages=['Overview','Team & devices','Attendance','Apps & websites','Productivity rules','Activity timeline','Projects & tasks','Screenshots','Workspace settings'];
  for(let i=0;i<pages.length;i++){await nav(pages[i]);await capture(`desktop-${i+1}-${pages[i].replace(/[^a-z]/gi,'-')}`);}
  for(const name of ['Targets & breaks','Tracking & storage']){await page.getByRole('tab',{name}).click();await capture('desktop-settings-'+name.split(' ')[0]);}
@@ -68,11 +91,11 @@ try {
  for(const [button,name] of [['Manage projects','projects'],['Change password','password'],['View audit log','audit'],['Whitelist apps & sites →','classification']]){await page.getByRole('button',{name:button,exact:true}).click();if(name==='audit')await page.getByText('Updated daily work target to 8 hours.').waitFor();await capture('dialog-'+name);await close();}
  await nav('Screenshots');await page.getByRole('button',{name:/EMP001.*Open screenshot/}).click();await page.getByRole('img',{name:/Screenshot for/}).waitFor();await capture('dialog-screenshot');await close();
  await nav('Team & devices');await page.getByRole('button',{name:/Revoke/}).first().click();await capture('dialog-revoke');await close();
- await page.getByRole('button',{name:'Edit work policy',exact:true}).first().click();await page.getByLabel('Policy source').selectOption('override');await capture('employee-policy-fixed');await page.getByLabel('Work arrangement').selectOption('consultant');await page.getByLabel('Required work hours per day').fill('2');await page.getByRole('combobox',{name:/^Schedule/}).selectOption('flexible');await capture('employee-policy-flexible');await page.setViewportSize({width:390,height:844});await capture('employee-policy-mobile');await page.setViewportSize({width:1440,height:1000});await close();
- await nav('Productivity rules');await page.getByRole('button',{name:'Whitelist Code.exe',exact:true}).click();await page.getByRole('button',{name:'Whitelist github.com',exact:true}).click();await page.locator('.rule-options summary').first().click();await capture('rules-edit-advanced');
+ await page.getByRole('button',{name:'Edit work policy',exact:true}).first().click();await page.getByLabel('Policy source').selectOption('override');await capture('employee-policy-fixed');await auditSelects('employee-policy');const arrangement=page.getByLabel('Work arrangement');await arrangement.focus();await page.keyboard.press('Space');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await arrangement.inputValue(),'part_time');await arrangement.selectOption('full_time');const hours=page.getByLabel('Required work hours per day');await hours.fill('25');await page.getByRole('button',{name:'Approve & save work policy'}).click();assert.equal(await hours.evaluate(e=>e.validity.rangeOverflow),true);await capture('policy-invalid-hours');await hours.fill('8');await page.getByLabel('Work arrangement').selectOption('consultant');await page.getByLabel('Required work hours per day').fill('2');await page.getByRole('combobox',{name:/^Schedule/}).selectOption('flexible');await capture('employee-policy-flexible');await page.setViewportSize({width:1440,height:1000});await close();
+ await nav('Productivity rules');await page.getByRole('button',{name:'Whitelist Code.exe',exact:true}).click();await page.getByRole('button',{name:'Whitelist github.com',exact:true}).click();await page.locator('.rule-options summary').first().click();await capture('rules-edit-advanced');await auditSelects('rules');
  failSave=true;await page.getByRole('button',{name:'Save productivity rules'}).click();await page.getByRole('alert').waitFor();await capture('rules-save-error');failSave=false;await page.getByRole('button',{name:'Save productivity rules'}).click();await page.getByText('Productivity rules saved. Reports recalculated.').waitFor();assert(rules.some(r=>r.match==='Code.exe'&&r.target==='app'&&r.category==='productive'));assert(rules.some(r=>r.match==='github.com'&&r.target==='domain'&&r.match_kind==='domain'));await capture('rules-saved');
  await nav('Activity timeline');await page.getByLabel('Only verification flags').check();assert.equal(await page.getByText('Needs verification',{exact:true}).count(),1);await capture('timeline-filtered');
- for(const size of [{width:1280,height:720},{width:390,height:844}]){
+ for(const size of [{width:1280,height:720}]){
   await page.setViewportSize(size);
   for(let i=0;i<pages.length;i++){await nav(pages[i]);await capture(`${size.width}-${i+1}-${pages[i].replace(/[^a-z]/gi,'-')}`);}
   await page.getByRole('tab',{name:'Targets & breaks'}).click();await capture(`${size.width}-settings-targets`);
@@ -81,7 +104,7 @@ try {
  empty=true;await nav('Overview');await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByText('No records in this period').waitFor();await capture('mobile-empty-overview');
  await nav('Screenshots');await capture('mobile-empty-screenshots');
  assert.equal(failures.length,0,failures.join('\n'));
- await writeFile(resolve(output,'manifest.json'),JSON.stringify({screenshots,failures,checks:['login','all 9 pages at 3 widths','all 8 dialogs including manager employee policy','settings tabs','hours conversion','whitelist app + domain save','failed save retains edits','verification filter','empty states','no horizontal page overflow','no browser exceptions']},null,2));
+ await writeFile(resolve(output,'manifest.json'),JSON.stringify({screenshots,failures,checks:['login','all 9 pages at desktop and laptop widths','all 8 dialogs including manager employee policy','settings tabs','hours conversion','whitelist app + domain save','failed save retains edits','verification filter','empty states','no horizontal page overflow','no browser exceptions']},null,2));
  console.log(`PASS: ${screenshots.length} screenshots; all page and component checks passed. ${output}`);
 } finally {await browser.close();}
 

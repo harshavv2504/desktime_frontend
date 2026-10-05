@@ -68,3 +68,25 @@ dialog.dialog-shot{width:min(1440px,calc(100vw - 64px))}
 .dialog-categories .rules-empty{padding:20px}
 .dialog-categories .rules-save{position:sticky;bottom:-24px;background:white;padding:16px 0;margin-top:16px;z-index:2;box-shadow:0 -8px 16px #ffffffed}
 @media(max-width:760px){.dialog-categories .rules-save{bottom:-18px}}
+/* Shared interactive controls, including the opened browser picker. */
+select{cursor:pointer;min-width:0;max-width:100%;font:inherit;color:var(--ink)}
+@supports (appearance:base-select){
+ select,select::picker(select){appearance:base-select}
+ select{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}
+ select::picker-icon{color:#78638e;font-size:12px;transition:rotate .15s}
+ select:open::picker-icon{rotate:180deg}
+ select::picker(select){font-family:'DM Sans',sans-serif;font-size:13px;color:#30263e;background:#fff;border:1px solid #ddd3e9;border-radius:10px;padding:6px;box-shadow:0 12px 32px #25123426;margin-block:6px;max-height:min(320px,50dvh);overflow:auto;scrollbar-width:thin;scrollbar-color:#c5b5d9 transparent}
+ select option{display:flex;align-items:center;gap:10px;min-height:40px;padding:10px 12px;border-radius:6px;white-space:normal;overflow-wrap:anywhere;line-height:1.4;cursor:pointer}
+ select option:checked{background:#f0e9fc;color:#6936b8;font-weight:600}
+ select option:hover,select option:focus-visible{background:#f6f2fb;color:#502780;outline:2px solid #b393e5;outline-offset:-2px}
+ select option::checkmark{color:#7541c8;margin-inline-end:2px}
+ select option:disabled{color:#a49aac;cursor:not-allowed;background:#faf9fc}
+}
+:where(button,a,input,select,textarea,summary):focus-visible{outline:2px solid #8551d1;outline-offset:3px}
+input:not([type=checkbox]):not([type=radio]):hover,select:hover,textarea:hover{border-color:#b5a2cb}
+input:disabled,select:disabled,textarea:disabled,button:disabled{cursor:not-allowed;opacity:.6}
+input:disabled,select:disabled,textarea:disabled{background:#f2eff6}
+input[type=checkbox],input[type=radio]{accent-color:#7541c8;cursor:pointer}
+input:user-invalid,textarea:user-invalid,select:user-invalid{border-color:#b53c5b;outline-color:#b53c5b}
+.dialog-body .error{color:#9e294b;background:#fff0f3;border-color:#ebbdc9}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
