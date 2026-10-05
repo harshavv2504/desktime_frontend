@@ -1229,3 +1229,5 @@ dialog.wide {
     }
   }
 }
+
+.verification-evidence {min-width:230px;max-width:360px;color:#854d0e}.verification-evidence strong{display:block}.verification-evidence small{display:block;white-space:normal;line-height:1.5;margin-top:6px}

@@ -24,6 +24,7 @@ export interface Device extends Employee {
   app: string;
 }
 export interface Activity extends Employee {
+  verification_signals?: VerificationSignal[];
   window_title?: string;
   id: string;
   device_id: string;
@@ -113,3 +114,7 @@ export type ModalState =
     }["invite" | "projects" | "categories" | "password" | "audit"]
   | { kind: "revoke"; device: Device }
   | { kind: "shot"; shot: Shot };
+
+export type VerificationSignal =
+  | {kind: 'bounded_pointer'; window_seconds: number; span_x_px: number; span_y_px: number; sample_count: number}
+  | {kind: 'regular_clicks'; window_seconds: number; click_count: number; median_interval_ms: number; tolerance_ms: number; regularity: number};

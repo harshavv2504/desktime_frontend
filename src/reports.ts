@@ -146,6 +146,7 @@ export function exportRows(
           "Domain",
           "Window title (observed)",
           "State",
+          "Verification evidence (review only)",
           "Project",
           "Task",
           "Seconds",
@@ -158,6 +159,7 @@ export function exportRows(
           e.domain,
           e.window_title || "",
           e.state,
+          verificationText(e),
           e.project,
           e.task,
           e.seconds,
@@ -188,4 +190,11 @@ export function exportRows(
         ]),
       ];
   }
+}
+
+export function verificationText(e: Activity): string {
+  return (e.verification_signals || []).map(s => s.kind === 'bounded_pointer'
+    ? `Pointer within ${s.span_x_px} × ${s.span_y_px} px for ${Math.round(s.window_seconds)}s (${s.sample_count} samples)`
+    : `${s.click_count} regular clicks over ${Math.round(s.window_seconds)}s; interval ${s.median_interval_ms}ms ± ${s.tolerance_ms}ms; ${Math.round(s.regularity * 100)}% consistent`
+  ).join('; ');
 }

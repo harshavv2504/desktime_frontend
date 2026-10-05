@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import App, { parseCategories } from "../App";
-import { csvText, filterQuery, groupEvents, duration } from "../reports";
+import { csvText, filterQuery, groupEvents, duration, exportRows } from "../reports";
 import type { Activity } from "../types";
 
 const session = {
@@ -29,7 +29,7 @@ const event: Activity = {
   task: "React",
   category: "productive",
 };
-function setup(loggedIn = true) {
+function setup(loggedIn = true, events: Activity[] = [event]) {
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
     const path = url.split("?")[0];
     const results: Record<string, unknown> = {
@@ -37,7 +37,7 @@ function setup(loggedIn = true) {
       "/api/login": session,
       "/api/devices": { devices: [device] },
       "/api/report": {
-        events: [event],
+        events,
         attendance: [
           {
             ...device,
@@ -232,4 +232,28 @@ describe("React dashboard", () => {
     expect(screen.getByText('No context recorded')).toBeInTheDocument();
     expect(document.body.textContent).not.toContain('\u00e2\u20ac');
   });
+  it("shows review evidence and filters unflagged activity without changing durations", async () => {
+    setup(true, [event, {...event, id: 'flagged', app: 'ReviewedEditor.exe', verification_signals: [
+      {kind: 'bounded_pointer', window_seconds: 300, span_x_px: 20, span_y_px: 30, sample_count: 61},
+      {kind: 'regular_clicks', window_seconds: 60, click_count: 61, median_interval_ms: 1000, tolerance_ms: 150, regularity: 1}
+    ]}]);
+    await screen.findByText('Team at a glance');
+    fireEvent.click(screen.getByRole('button', {name: 'Activity timeline'}));
+    expect(screen.getByText('Needs verification')).toBeInTheDocument();
+    expect(screen.getByText(/Pointer within 20/)).toHaveTextContent('61 regular clicks');
+    fireEvent.click(screen.getByLabelText('Only verification flags'));
+    expect(screen.queryByText('No flag')).not.toBeInTheDocument();
+    expect(screen.getByText('ReviewedEditor.exe')).toBeInTheDocument();
+    expect(screen.getByText('1h 0m')).toBeInTheDocument();
+  });
+
+  it("exports verification evidence with unchanged recorded seconds", () => {
+    const row = {...event, verification_signals: [{kind: 'bounded_pointer' as const, window_seconds: 300, span_x_px: 0, span_y_px: 0, sample_count: 61}]};
+    const workspace = {devices: [], report: {events: [row], attendance: []}, shots: [], policy: {} as import('../types').Policy, projects: [], categories: []};
+    const rows = exportRows('timeline', workspace, '');
+    expect(rows[0]).toContain('Verification evidence (review only)');
+    expect(rows[1]).toContain('Pointer within 0 × 0 px for 300s (61 samples)');
+    expect(rows[1]).toContain(3600);
+  });
+
 });

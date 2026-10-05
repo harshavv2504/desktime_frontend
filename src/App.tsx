@@ -12,6 +12,7 @@ import { ApiError, errorMessage, requestApi } from "./api";
 import Icon from "./Icon";
 import voicedotsLogo from "./assets/voicedotslogo.svg";
 import {
+  verificationText,
   csvText,
   days,
   duration,
@@ -237,6 +238,7 @@ function Reports({
   open: (m: ModalState) => void;
   navigate: (v: View) => void;
 }) {
+  const [reviewOnly, setReviewOnly] = useState(false);
   const devices = data.devices.filter(
     (d) => !employee || d.employee_id === employee,
   );
@@ -465,6 +467,11 @@ function Reports({
   if (view === "timeline")
     return (
       <Card>
+        <div className="card-body">
+          <label><input type="checkbox" checked={reviewOnly} onChange={e => setReviewOnly(e.target.checked)} /> Only verification flags</label>
+          <p className="help">Needs verification means an observed input pattern, not proof of misconduct. Keyboard-only work and repetitive tasks can trigger flags. Work time and productivity are unchanged.</p>
+          <p className="help">Pointer rule: within 50 × 50 physical pixels for 5 minutes. Click rule: at least 30 clicks over 60 seconds, with 95% of intervals within ±15% (minimum 20ms). Flags require the updated employee app.</p>
+        </div>
         <Table
           headers={[
             "Employee",
@@ -473,11 +480,13 @@ function Reports({
             "Application / website",
             "Window / file context",
             "State",
+            "Verification",
             "Project",
             "Task",
             "Duration",
           ]}
           rows={[...data.report.events]
+            .filter(e => !reviewOnly || Boolean(e.verification_signals?.length))
             .sort((a, b) => a.start.localeCompare(b.start))
             .map((e) => [
               person(e),
@@ -486,6 +495,7 @@ function Reports({
               e.domain || e.app,
               e.window_title || "Not available",
               <Badge value={e.state} />,
+              e.verification_signals?.length ? <div className="verification-evidence"><strong>Needs verification</strong><small>{verificationText(e)}</small></div> : "No flag",
               e.project || "—",
               e.task || "—",
               duration(e.seconds),
