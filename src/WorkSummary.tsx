@@ -13,7 +13,7 @@ export default function WorkSummary({ rows, onRules, onSettings }: { rows: Atten
         <span className="eyebrow">PRODUCTIVITY</span>
         <strong>{required ? `${(100*productive/required).toFixed(1)}%` : '—'}</strong>
         <p>{required ? 'Productive time / required work time' : 'Work target not configured'}</p>
-        <div className="productivity-bar" aria-label="Active time by classification">{categories.map(([label,value])=><span key={label} className={label.toLowerCase()} style={{width: `${active ? value/active*100 : 0}%`}} />)}</div>
+        <div className="productivity-bar" aria-label="Required work time by classification">{categories.map(([label,value])=><span key={label} className={label.toLowerCase()} style={{width: `${required ? value/Math.max(required,active)*100 : 0}%`}} />)}</div>
         {unrated>0 && <div className="classification-prompt"><span>{duration(unrated)} needs classification.</span>{onRules && <button className="text-button" onClick={onRules}>Whitelist apps & sites</button>}</div>}
       </div>
       <div className="category-metrics">{categories.map(([label,value])=><div key={label}><span><i className={`status-dot ${label.toLowerCase()}`} />{label}</span><strong>{duration(value)}</strong></div>)}</div>
