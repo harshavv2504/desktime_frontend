@@ -177,7 +177,7 @@ export function exportRows(
           "Idle h",
           "Locked h",
           "Private h",
-          "Unknown h", "Productive h", "Neutral h", "Unproductive h", "Unrated h", "Credited h", "Required h", "Remaining h", "Lunch h", "Break h", "Break overrun h",
+          "Unknown h", "Productive h", "Neutral h", "Unproductive h", "Unrated h", "Productive target completed h", "Required h", "Remaining h", "Lunch h", "Break h",
         ],
         ...data.report.attendance.map((a) => [
           a.date,
@@ -186,7 +186,7 @@ export function exportRows(
           timeText(a.first),
           timeText(a.last),
           ...timeKeys.map((k) => hours(a[k])),
-          ...(['productive','neutral','unproductive','unrated','credited','required','remaining','lunch','break','break_overrun'] as const).map(k=>hours(a[k] || 0)),
+          ...(['productive','neutral','unproductive','unrated','credited','required','remaining','lunch','break'] as const).map(k=>hours(a[k] || 0)),
         ]),
       ];
   }

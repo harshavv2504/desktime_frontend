@@ -304,7 +304,7 @@ function Reports({
   if (view === "attendance")
     return <Card><Table headers={['Date','Employee','Active time','Work target','Remaining','Productivity','Details']} rows={data.report.attendance.map(a=>[
       a.date,person(a),duration(a.active),<div className="stacked-cell"><strong>{duration(a.credited||0)}</strong><small>{a.required?`of ${duration(a.required)}`:'No target set'}</small></div>,a.required?duration(a.remaining||0):'—',a.productivity==null?'No activity':`${a.productivity.toFixed(1)}%`,
-      <details className="attendance-details"><summary>View breakdown</summary><dl>{[['First activity',timeText(a.first)],['Last activity',timeText(a.last)],['Idle',duration(a.idle)],['Locked',duration(a.locked)],['Private',duration(a.paused)],['Unknown',duration(a.unknown)],['Lunch',duration(a.lunch||0)],['Other breaks',duration(a.break||0)],['Break overrun',duration(a.break_overrun||0)]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></details>
+      <details className="attendance-details"><summary>View breakdown</summary><dl>{[['First activity',timeText(a.first)],['Last activity',timeText(a.last)],['Idle',duration(a.idle)],['Locked',duration(a.locked)],['Private',duration(a.paused)],['Unknown',duration(a.unknown)],['Lunch',duration(a.lunch||0)],['Other breaks',duration(a.break||0)]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></details>
     ])}/><p className="card-body help">Unknown time is not confirmed absence. Overlapping device intervals count once. Export CSV for all time categories.</p></Card>;
   if (view === "usage")
     return (
@@ -393,12 +393,10 @@ function Settings({data,session,api,refresh,open,logout,notify}: {
             </div>
           </div>
           <div id="panel-targets" role="tabpanel" aria-labelledby="tab-targets" hidden={tab!=='targets'}>
-            <div className="section-description"><h3>Daily goals, lunch & breaks</h3><p>Set a work target in hours and break allowances in minutes. Changes apply from today.</p></div>
-            <div className="form-grid"><label className="full">Minimum work hours per day<div className="input-unit"><input type="number" name="minimum_hours" min={0} max={24} step="any" required defaultValue={(p.minimum_minutes||0)/60}/><span>hours / day</span></div><small>0 leaves the target unconfigured.</small></label>
-              <label>Lunch allowance<div className="input-unit"><input type="number" name="lunch_minutes" min={0} max={1440} required defaultValue={p.lunch_minutes||0}/><span>minutes</span></div></label>
-              <label>Other break allowance<div className="input-unit"><input type="number" name="break_minutes" min={0} max={1440} required defaultValue={p.break_minutes||0}/><span>minutes</span></div></label>
+            <div className="section-description"><h3>Daily productive target</h3><p>Set required productive hours. Lunch and breaks are unrestricted and never count toward the target. Changes apply from today.</p></div>
+            <div className="form-grid"><label className="full">Required productive hours per day<div className="input-unit"><input type="number" name="minimum_hours" min={0} max={24} step="any" required defaultValue={(p.minimum_minutes||0)/60}/><span>hours / day</span></div><small>0 leaves the target unconfigured.</small></label>
             </div>
-            <p className="policy-note">The daily target is net work time. Lunch, other breaks, idle, and paused time do not count toward it.</p>
+            <p className="policy-note">Only apps and websites classified as productive count. Completion is capped at 100% each day; extra time never offsets another day.</p>
           </div>
           <div id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" hidden={tab!=='capture'}>
             <div className="section-description"><h3>Activity & screenshots</h3><p>Choose when inactivity begins, how often screenshots are taken, and how long records stay available.</p></div>
@@ -721,6 +719,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null),
     [checking, setChecking] = useState(true),
     [data, setData] = useState<Workspace | null>(null),
+    [unavailable,setUnavailable]=useState<string[]>([]),
     [view, setView] = useState<View>("overview"),
     [modal, setModal] = useState<ModalState | null>(null);
   const [draft, setDraft] = useState<Filters>(() => ({
@@ -771,34 +770,22 @@ export default function App() {
     setLoading(true);
     setError("");
     const q = filterQuery(filters);
-    Promise.all([
-      api<{ devices: Workspace["devices"] }>("devices", undefined, c.signal),
-      api<Workspace["report"]>("report?" + q, undefined, c.signal),
-      api<{ screenshots: Workspace["shots"] }>(
-        "screenshots?" + q,
-        undefined,
-        c.signal,
-      ),
-      api<{ policy: Workspace["policy"] }>("policy", undefined, c.signal),
-      api<{ projects: string[] }>("projects", undefined, c.signal),
-      api<{ categories: Category[] }>("categories", undefined, c.signal),
-    ])
-      .then(([d, report, s, p, projects, categories]) => {
-        if (!c.signal.aborted) {
-          setData({
-            devices: d.devices,
-            report,
-            shots: s.screenshots,
-            policy: p.policy,
-            projects: projects.projects,
-            categories: categories.categories,
-          });
-          setUpdated(timeText(new Date().toISOString()));
-        }
-      })
-      .catch((e) => {
-        if (!c.signal.aborted) setError(errorMessage(e));
-      })
+    Promise.allSettled([
+      api<{devices:Workspace['devices']}>('devices',undefined,c.signal),
+      api<Workspace['report']>('report?'+q,undefined,c.signal),
+      api<{screenshots:Workspace['shots']}>('screenshots?'+q,undefined,c.signal),
+      api<{policy:Workspace['policy']}>('policy',undefined,c.signal),
+      api<{projects:string[]}>('projects',undefined,c.signal),
+      api<{categories:Category[]}>('categories',undefined,c.signal),
+    ]).then(([d,r,s,p,j,k])=>{
+      if(c.signal.aborted)return;
+      const names=['devices','report','screenshots','policy','projects','categories'];
+      const failures=[d,r,s,p,j,k].flatMap((v,i)=>v.status==='rejected'?[names[i]]:[]);
+      setUnavailable(failures);
+      setError(failures.length?'Unavailable: '+failures.join(', ')+'. Other pages remain available; retry to reload.':'');
+      setData({devices:d.status==='fulfilled'?d.value.devices:[],report:r.status==='fulfilled'?r.value:{events:[],attendance:[]},shots:s.status==='fulfilled'?s.value.screenshots:[],policy:p.status==='fulfilled'?p.value.policy:{work_start:'',work_end:'',work_days:[],holidays:[],idle_seconds:300,retention_days:90,screenshot_seconds:0},projects:j.status==='fulfilled'?j.value.projects:[],categories:k.status==='fulfilled'?k.value.categories:[]});
+      if(!failures.length)setUpdated(timeText(new Date().toISOString()));
+    })
       .finally(() => {
         if (!c.signal.aborted) setLoading(false);
       });
@@ -1030,7 +1017,7 @@ export default function App() {
                   </button>
                 </p>
               )}
-              {data ? (
+              {unavailable.some(key=>({overview:['report','devices'],team:['devices'],attendance:['report'],usage:['report'],timeline:['report'],projects:['report','projects'],screenshots:['screenshots','devices'],settings:['policy','projects','categories'],productivity:['categories','report']}[view]).includes(key)) ? <p role="status">This page could not load its required data. Use Retry above.</p> : data ? (
                 view === "settings" ? (
                   <Settings
                     data={data}
@@ -1063,7 +1050,7 @@ export default function App() {
               {view === "screenshots" && <Recordings api={api} filters={filters} revision={revision}/>}
             </div>
           </main>
-          {modal && data && (
+          {modal && data && !unavailable.length && (
             <Dialog
               modal={modal}
               data={data}

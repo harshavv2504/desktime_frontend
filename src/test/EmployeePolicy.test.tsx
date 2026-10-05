@@ -8,7 +8,7 @@ it('saves an explicit manager-approved flexible consultant target',async()=>{
  const save=vi.fn().mockResolvedValue({});render(<EmployeePolicyEditor device={device} company={company} save={save}/>);
  fireEvent.change(screen.getByLabelText('Policy source'),{target:{value:'override'}});
  fireEvent.change(screen.getByLabelText('Work arrangement'),{target:{value:'consultant'}});
- fireEvent.change(screen.getByLabelText('Required work hours per day'),{target:{value:'2'}});
+ fireEvent.change(screen.getByLabelText('Required productive hours per day'),{target:{value:'2'}});
  fireEvent.change(screen.getByLabelText('Schedule'),{target:{value:'flexible'}});
  fireEvent.click(screen.getByRole('button',{name:'Approve & save work policy'}));
  await waitFor(()=>expect(save).toHaveBeenCalledWith(expect.objectContaining({employee_id:'C1',minimum_minutes:120,schedule_mode:'flexible',arrangement:'consultant',work_days:[0,1,2,3,4]})));

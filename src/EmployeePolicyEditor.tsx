@@ -21,7 +21,7 @@ export default function EmployeePolicyEditor({device,company,save}:{device:Devic
     {inherit?<p className="policy-note">Company target: {(company.minimum_minutes || 0)/60} hours/day. Schedule: {company.work_start}–{company.work_end} IST.</p>:<>
       <div className="form-grid">
         <label>Work arrangement<select name="arrangement" defaultValue={assigned.arrangement || 'full_time'}><option value="full_time">Full-time</option><option value="part_time">Part-time</option><option value="consultant">Consultant</option></select></label>
-        <label>Required work hours per day<input name="hours" type="number" min={1/60} max={24} step="any" required defaultValue={(assigned.minimum_minutes ?? 480)/60}/></label>
+        <label>Required productive hours per day<input name="hours" type="number" min={1/60} max={24} step="any" required defaultValue={(assigned.minimum_minutes ?? 480)/60}/></label>
       </div>
       <label>Schedule<select value={mode} onChange={e=>setMode(e.target.value as 'fixed'|'flexible')}><option value="fixed">Fixed hours</option><option value="flexible">Flexible hours</option></select></label>
       <div className="form-grid" hidden={mode==='flexible'}>

@@ -8,7 +8,7 @@ it('uses summed denominators for team productivity and handles no data',()=>{
   const rows=[{active:3600,productive:1800,required:7200},{active:10800,productive:10800,required:14400}] as Attendance[];
   render(<WorkSummary rows={rows}/>);
   expect(screen.queryByText('87.5%')).not.toBeInTheDocument();
-  expect(screen.getByText('58.3%')).toBeInTheDocument();
+  expect(screen.getAllByText('58.3%')).toHaveLength(2);
 });
 
 it('discovers both browser apps and sites and saves explicit productive targets',async()=>{
@@ -44,4 +44,10 @@ it('saves scoped domain rules from structured inputs',async()=>{
   fireEvent.change(screen.getByLabelText('Target'),{target:{value:'domain'}});
   fireEvent.click(screen.getByText('Save productivity rules'));
   await waitFor(()=>expect(save).toHaveBeenCalledWith([{match:'example.com',category:'productive',match_kind:'domain',employee_id:'E1',target:'domain'}]));
+});
+
+it('caps each day independently with no offset from extra time',()=>{
+ render(<WorkSummary rows={[{productive:36000,required:28800},{productive:21600,required:28800}] as Attendance[]}/>);
+ expect(screen.getAllByText('87.5%')).toHaveLength(2);
+ expect(screen.getByText('2h 0m remaining of 16h 0m')).toBeInTheDocument();
 });
