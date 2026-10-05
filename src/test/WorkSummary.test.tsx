@@ -15,11 +15,10 @@ it('discovers both browser apps and sites and saves explicit productive targets'
   const save=vi.fn().mockResolvedValue({});
   const events=[{state:'active',app:'chrome.exe',domain:'github.com'}] as Activity[];
   render(<ClassificationEditor initial={[]} events={events} save={save}/>);
-  fireEvent.click(screen.getByRole('button',{name:'Whitelist chrome.exe'}));
-  fireEvent.click(screen.getByRole('button',{name:'Whitelist github.com'}));
+  expect(screen.queryByLabelText('Category for chrome.exe')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Category for github.com'),{target:{value:'productive'}});
   fireEvent.click(screen.getByRole('button',{name:'Save productivity rules'}));
   await waitFor(()=>expect(save).toHaveBeenCalledWith([
-    {match:'chrome.exe',target:'app',category:'productive',match_kind:'exact'},
     {match:'github.com',target:'domain',category:'productive',match_kind:'domain'},
   ]));
 });
@@ -27,7 +26,7 @@ it('discovers both browser apps and sites and saves explicit productive targets'
 it('keeps classification edits when the server rejects a save',async()=>{
   const save=vi.fn().mockRejectedValue(Error('Connection interrupted'));
   render(<ClassificationEditor initial={[]} events={[{state:'active',app:'Code.exe',domain:''}] as Activity[]} save={save}/>);
-  fireEvent.click(screen.getByRole('button',{name:'Whitelist Code.exe'}));
+  fireEvent.change(screen.getByLabelText('Category for Code.exe'),{target:{value:'productive'}});
   fireEvent.click(screen.getByRole('button',{name:'Save productivity rules'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Connection interrupted');
   expect(screen.getByLabelText('Application or website')).toHaveValue('Code.exe');
@@ -37,6 +36,7 @@ it('keeps classification edits when the server rejects a save',async()=>{
 it('saves scoped domain rules from structured inputs',async()=>{
   const save=vi.fn().mockResolvedValue({});
   render(<ClassificationEditor initial={[]} events={[]} save={save}/>);
+  fireEvent.click(screen.getByText('Add or edit advanced rules'));
   fireEvent.click(screen.getByRole('button',{name:/Add rule/}));
   fireEvent.change(screen.getByLabelText('Application or website'),{target:{value:'example.com'}});
   fireEvent.change(screen.getByLabelText('Employee ID (blank = whole company)'),{target:{value:'E1'}});
