@@ -91,3 +91,5 @@ input:user-invalid,textarea:user-invalid,select:user-invalid{border-color:#b53c5
 .dialog-body .error{color:#9e294b;background:#fff0f3;border-color:#ebbdc9}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 .recordings{margin-top:24px}.recording-player{padding:18px;background:#f7f4fb;border:1px solid #e3d9ed;border-radius:12px;margin-bottom:20px}.recording-player video{display:block;width:100%;max-height:65vh;background:#171120;margin:16px 0;border-radius:8px}.recordings td:nth-child(3){white-space:normal;max-width:400px}
+
+.recording-policy{margin-top:20px;padding:16px;background:#f7f3fc;border:1px solid #e3d8ef;border-radius:9px;white-space:normal;line-height:1.5}.recording-policy input{flex:none}.recording-policy+.help{margin:12px 0 18px;line-height:1.7}
