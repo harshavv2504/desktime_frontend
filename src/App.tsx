@@ -1,3 +1,4 @@
+import Recordings from './Recordings';
 import EmployeePolicyEditor from './EmployeePolicyEditor';
 import WorkSummary from './WorkSummary';
 import ClassificationEditor from './ClassificationEditor';
@@ -523,6 +524,7 @@ function Settings({data,session,api,refresh,open,logout,notify}: {
         <Form key={JSON.stringify(p)} label="Save work policy" submit={async d=>{
           const body: Record<string,unknown>={work_start:d.get('work_start'),work_end:d.get('work_end'),work_days:d.getAll('day').map(Number),holidays:String(d.get('holidays')).split(/\s+/).filter(Boolean),minimum_minutes:Math.round(Number(d.get('minimum_hours'))*60)};
           for(const key of ['lunch_minutes','break_minutes','idle_seconds','retention_days','screenshot_seconds','screenshot_retention_days']) if(d.has(key))body[key]=Number(d.get(key));
+          body.flag_recording_enabled=d.get('flag_recording_enabled')==='on';
           for(const key of ['credit_idle','lunch_paid','break_paid'])body[key]=false;
           if(Number(body.screenshot_seconds)>0&&Number(body.screenshot_seconds)<60)throw Error('Screenshot interval must be 0 or at least 60 seconds.');
           if(!body.work_days || !(body.work_days as number[]).length)throw Error('Select at least one working day.');
@@ -546,6 +548,7 @@ function Settings({data,session,api,refresh,open,logout,notify}: {
           <div id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" hidden={tab!=='capture'}>
             <div className="section-description"><h3>Activity & screenshots</h3><p>Choose when inactivity begins, how often screenshots are taken, and how long records stay available.</p></div>
             <div className="form-grid">{([['idle_seconds','Idle threshold',30,3600,'seconds'],['screenshot_seconds','Screenshot interval',0,3600,'seconds'],['retention_days','Activity retention',1,3650,'days'],['screenshot_retention_days','Screenshot retention',1,365,'days']] as const).map(([key,label,min,max,unit])=>p[key]!==undefined&&<label key={key}>{label}<div className="input-unit"><input type="number" name={key} min={min} max={max} required defaultValue={p[key]}/><span>{unit}</span></div></label>)}</div>
+            <label className="review-filter"><input type="checkbox" name="flag_recording_enabled" defaultChecked={p.flag_recording_enabled || false}/>Record up to 2 minutes when activity needs verification</label><p className="help">Includes pointer movement and click markers, without audio. Employees see a recording notice. Stops on pause, break, or end of approved work time. Maximum one clip per device every 30 minutes; clips are deleted after 7 days.</p>
             <p className="inline-note">Screenshots are manager-controlled. Use 0 to disable, or an interval of 60–3,600 seconds. Capture stops during breaks and outside work hours.</p>
           </div>
         </Form>
@@ -1196,6 +1199,7 @@ export default function App() {
                     : "Workspace data is unavailable."}
                 </p>
               )}
+              {view === "screenshots" && <Recordings api={api} filters={filters} revision={revision}/>}
             </div>
           </main>
           {modal && data && (

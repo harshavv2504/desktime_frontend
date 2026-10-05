@@ -65,6 +65,7 @@ export interface Shot {
   time: string;
 }
 export interface Policy {
+  flag_recording_enabled?: boolean;
   schedule_mode?: "fixed" | "flexible";
   arrangement?: "full_time" | "part_time" | "consultant";
   inherited?: boolean;

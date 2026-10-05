@@ -1,6 +1,6 @@
 ﻿// Isolated browser QA. All API writes are intercepted; production data is never changed.
 import { chromium } from 'playwright-core';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
 
@@ -17,6 +17,7 @@ const events=Array.from({length:42},(_,i)=>({...devices[i%3],device_id:`device-$
 const attendance=devices.map((d,i)=>({...d,date:'2026-10-05',first:events[0].start,last:now,active:18000+i*1000,idle:800,locked:300,paused:1800,unknown:600,productive:14000,neutral:1500,unproductive:1000,unrated:1500+i*1000,credited:19000,required:28800,remaining:9800,productivity:72.5,effectiveness:48.6,lunch:1800,break:600,break_overrun:0}));
 const policy={work_start:'09:00',work_end:'18:45',work_days:[0,1,2,3,4,5],holidays:[],idle_seconds:300,retention_days:90,screenshot_seconds:300,screenshot_retention_days:30,minimum_minutes:480,lunch_minutes:30,break_minutes:15,credit_idle:false,lunch_paid:true,break_paid:false};
 let image='';
+await page.route('**/qa-video.mp4',async route=>route.fulfill({contentType:'video/mp4',body:await readFile(resolve('../../artifacts/recording-qa/synthetic-120s.mp4'))}));
 await page.route('**/api/**',async route=>{
   const path=new URL(route.request().url()).pathname.split('/api/')[1];const post=route.request().method()==='POST';let status=200,data={};
   if(path==='session'&&!loggedIn){status=401;data={error:'Sign in required'};}
@@ -24,6 +25,8 @@ await page.route('**/api/**',async route=>{
   else if(path==='session')data={username:'admin',csrf:'qa-only',server_url:'https://api.example.test'};
   else if(path==='devices')data={devices:empty?[]:devices};
   else if(path==='report')data={events:empty?[]:events,attendance:empty?[]:attendance};
+  else if(path==='recordings')data={recordings:empty?[]:[{id:'clip-1',employee_id:'EMP001',time:now,duration:120,signals:[{kind:'bounded_pointer',window_seconds:300,span_x_px:20,span_y_px:30,sample_count:61}]}]};
+  else if(path==='recording')data={url:'http://127.0.0.1:5174/qa-video.mp4'};
   else if(path==='screenshots')data={screenshots:empty?[]:[{id:'shot-1',employee_id:'EMP001',time:now}]};
   else if(path==='policy') {if(post)Object.assign(policy,route.request().postDataJSON());data={policy};}
   else if(path==='categories') {if(post){if(failSave){status=500;data={error:'Could not save rules. Please retry.'};}else rules=route.request().postDataJSON();}if(status===200)data={categories:rules};}
@@ -89,7 +92,7 @@ try {
  await page.getByRole('tab',{name:'Targets & breaks'}).click();await page.getByLabel(/Minimum work hours per day/).fill('7.5');await page.getByRole('button',{name:'Save work policy'}).click();await page.getByText('Work policy saved.').waitFor();assert.equal(policy.minimum_minutes,450);
  await page.getByRole('button',{name:'Add employee',exact:true}).first().click();await capture('dialog-invite');await page.getByLabel('Employee name').fill('QA User');await page.getByLabel('Employee ID',{exact:true}).fill('QA001');await page.getByRole('button',{name:'Create enrollment code'}).click();await page.getByText('DEMO-ENROLLMENT-CODE').waitFor();await capture('dialog-enrollment-code');await close();
  for(const [button,name] of [['Manage projects','projects'],['Change password','password'],['View audit log','audit'],['Whitelist apps & sites →','classification']]){await page.getByRole('button',{name:button,exact:true}).click();if(name==='audit')await page.getByText('Updated daily work target to 8 hours.').waitFor();await capture('dialog-'+name);await close();}
- await nav('Screenshots');await page.getByRole('button',{name:/EMP001.*Open screenshot/}).click();await page.getByRole('img',{name:/Screenshot for/}).waitFor();await capture('dialog-screenshot');await close();
+ await nav('Screenshots');await page.getByRole('button',{name:'Watch recording'}).click();await page.locator('video').evaluate(v=>new Promise(resolve=>{if(v.readyState>=1)resolve();else v.onloadedmetadata=resolve;}));assert.equal(await page.locator('video').evaluate(v=>v.duration),120);await page.locator('video').evaluate(v=>{v.currentTime=20;});await capture('verification-video-player');await page.getByRole('button',{name:'Close recording'}).click();await page.getByRole('button',{name:/EMP001.*Open screenshot/}).click();await page.getByRole('img',{name:/Screenshot for/}).waitFor();await capture('dialog-screenshot');await close();
  await nav('Team & devices');await page.getByRole('button',{name:/Revoke/}).first().click();await capture('dialog-revoke');await close();
  await page.getByRole('button',{name:'Edit work policy',exact:true}).first().click();await page.getByLabel('Policy source').selectOption('override');await capture('employee-policy-fixed');await auditSelects('employee-policy');const arrangement=page.getByLabel('Work arrangement');await arrangement.focus();await page.keyboard.press('Space');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await arrangement.inputValue(),'part_time');await arrangement.selectOption('full_time');const hours=page.getByLabel('Required work hours per day');await hours.fill('25');await page.getByRole('button',{name:'Approve & save work policy'}).click();assert.equal(await hours.evaluate(e=>e.validity.rangeOverflow),true);await capture('policy-invalid-hours');await hours.fill('8');await page.getByLabel('Work arrangement').selectOption('consultant');await page.getByLabel('Required work hours per day').fill('2');await page.getByRole('combobox',{name:/^Schedule/}).selectOption('flexible');await capture('employee-policy-flexible');await page.setViewportSize({width:1440,height:1000});await close();
  await nav('Productivity rules');await page.getByRole('button',{name:'Whitelist Code.exe',exact:true}).click();await page.getByRole('button',{name:'Whitelist github.com',exact:true}).click();await page.locator('.rule-options summary').first().click();await capture('rules-edit-advanced');await auditSelects('rules');
