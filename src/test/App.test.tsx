@@ -104,7 +104,7 @@ describe("React dashboard", () => {
       target: { value: "password" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    await screen.findByText("Team at a glance");
+    await screen.findByText("Employee work targets");
     for (const title of [
       "Attendance",
       "Apps & websites",
@@ -125,7 +125,7 @@ describe("React dashboard", () => {
   });
   it("creates enrollment codes with CSRF and closes dialogs", async () => {
     const fetcher = setup();
-    await screen.findByText("Team at a glance");
+    await screen.findByText("Employee work targets");
     fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
     fireEvent.change(screen.getByLabelText("Employee name"), {
       target: { value: "Bob" },
@@ -150,7 +150,7 @@ describe("React dashboard", () => {
   });
   it("loads screenshots only on demand and supports settings edits", async () => {
     const fetcher = setup();
-    await screen.findByText("Team at a glance");
+    await screen.findByText("Employee work targets");
     expect(
       fetcher.mock.calls.some(([url]) => url.startsWith("/api/shot?")),
     ).toBe(false);
@@ -177,7 +177,7 @@ describe("React dashboard", () => {
   });
   it("applies report date filters and signs out without leaving employee data", async () => {
     const fetcher = setup();
-    await screen.findByText("Team at a glance");
+    await screen.findByText("Employee work targets");
     fireEvent.change(screen.getByLabelText("From"), {
       target: { value: "2026-09-01" },
     });
@@ -192,7 +192,7 @@ describe("React dashboard", () => {
         ),
       ).toBe(true),
     );
-    await screen.findByText("Team at a glance");
+    await screen.findByText("Employee work targets");
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     await screen.findByRole("heading", { name: "Manager sign in" });
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
@@ -226,7 +226,7 @@ describe("React dashboard", () => {
   });
   it("shows context and classification controls on Apps and websites", async () => {
     setup();
-    await screen.findByText('Team at a glance');
+    await screen.findByText('Employee work targets');
     fireEvent.click(screen.getByRole('button', {name: 'Apps & websites'}));
     await screen.findByRole('columnheader', {name: 'Window / file context'});
     expect(screen.getByRole('button', {name: 'Manage classifications'})).toBeInTheDocument();
@@ -238,7 +238,7 @@ describe("React dashboard", () => {
       {kind: 'bounded_pointer', window_seconds: 300, span_x_px: 20, span_y_px: 30, sample_count: 61},
       {kind: 'regular_clicks', window_seconds: 60, click_count: 61, median_interval_ms: 1000, tolerance_ms: 150, regularity: 1}
     ]}]);
-    await screen.findByText('Team at a glance');
+    await screen.findByText('Employee work targets');
     fireEvent.click(screen.getByRole('button', {name: 'Activity timeline'}));
     expect(screen.getByText('Needs verification')).toBeInTheDocument();
     expect(screen.getByText(/Pointer within 20/)).toHaveTextContent('61 regular clicks');

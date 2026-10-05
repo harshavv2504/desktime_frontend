@@ -11,3 +11,5 @@ HTMLDialogElement.prototype.showModal = function () {
 HTMLDialogElement.prototype.close = function () {
   this.open = false;
 };
+
+Object.defineProperty(globalThis,"IntersectionObserver",{writable:true,value:class { observe(){} disconnect(){} unobserve(){} }});

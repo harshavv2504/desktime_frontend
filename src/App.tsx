@@ -1,3 +1,5 @@
+import TargetOverview from './TargetOverview';
+import ScreenshotGallery from './ScreenshotGallery';
 import Recordings from './Recordings';
 import EmployeePolicyEditor from './EmployeePolicyEditor';
 import WorkSummary from './WorkSummary';
@@ -227,12 +229,14 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
 }
 
 function Reports({
+  api,
   view,
   data,
   employee,
   open,
   navigate,
 }: {
+  api: RequestApi;
   view: View;
   data: Workspace;
   employee: string;
@@ -284,131 +288,7 @@ function Reports({
     />
   );
   if (view === "overview") {
-    const totals = timeKeys.map((k) =>
-      data.report.attendance.reduce((s, r) => s + r[k], 0),
-    );
-    const usageTotals=new Map<string,{app:string;domain:string;seconds:number}>();
-    for(const e of data.report.usage_events || data.report.events){
-      if(e.state!=='active')continue;
-      const key=e.domain || e.app;
-      const existing=usageTotals.get(key);
-      if(existing)existing.seconds+=e.seconds;
-      else usageTotals.set(key,{app:e.app,domain:e.domain,seconds:e.seconds});
-    }
-    const usage=[...usageTotals.values()].sort((a,b)=>b.seconds-a.seconds).slice(0,5);
-    return (
-      <>
-        <div className="metrics">
-          {[
-            [
-              "Connected devices",
-              devices.filter(
-                (d) => !["offline", "revoked"].includes(statusOf(d)),
-              ).length,
-            ],
-            ["Active time", duration(totals[0])],
-            ["Idle time", duration(totals[1])],
-            ["Unknown time", duration(totals[4])],
-          ].map(([label, value], index) => (
-            <section className="metric" key={label}>
-              <span className="metric-label">
-                {label}
-                <Icon name={index === 0 ? "team" : "clock"} />
-              </span>
-              <strong className="metric-value">{value}</strong>
-              <span className="metric-detail">
-                {
-                  [
-                    `${devices.length} enrolled devices · live status`,
-                    "Recorded activity in this period",
-                    "Time beyond the idle threshold",
-                    "Scheduled time without coverage",
-                  ][index]
-                }
-              </span>
-            </section>
-          ))}
-        </div>
-        <WorkSummary rows={data.report.attendance} onRules={() => navigate("productivity")} onSettings={() => navigate("settings")} />
-        <div className="grid-two">
-          <Card
-            title="Team at a glance"
-            action={
-              <button className="text-button" onClick={() => navigate("team")}>
-                View team →
-              </button>
-            }
-          >
-            {team(true)}
-          </Card>
-          <Card title="Most-used apps & websites">
-            <div className="card-body">
-              {usage.length ? (
-                usage.map((e, i) => (
-                  <div className="app-row" key={i}>
-                    <div>
-                      <span>{e.domain || e.app}</span>
-                      <small>{duration(e.seconds)}</small>
-                    </div>
-                    <progress
-                      max={usage[0].seconds || 1}
-                      value={e.seconds}
-                      aria-label={`${e.domain || e.app} usage`}
-                    />
-                  </div>
-                ))
-              ) : (
-                <p>No app usage yet.</p>
-              )}
-            </div>
-          </Card>
-        </div>
-        <Card title="Recorded time breakdown">
-          <div
-            className="distribution"
-            role="img"
-            aria-label={timeKeys
-              .map((key, i) => `${key}: ${duration(totals[i])}`)
-              .join(", ")}
-          >
-            {totals.some(Boolean) ? (
-              <svg
-                viewBox="0 0 1000 20"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                {totals.map((value, i) => {
-                  const total = totals.reduce((a, b) => a + b, 0);
-                  return (
-                    <rect
-                      key={i}
-                      className={`segment segment-${i}`}
-                      x={
-                        (1000 * totals.slice(0, i).reduce((a, b) => a + b, 0)) /
-                        total
-                      }
-                      y="0"
-                      width={(1000 * value) / total}
-                      height="20"
-                    />
-                  );
-                })}
-              </svg>
-            ) : (
-              <p>No recorded time in this period</p>
-            )}
-          </div>
-          <div className="card-body time-breakdown">
-            {timeKeys.map((k, i) => (
-              <div className={`time-item time-item-${i}`} key={k}>
-                <strong>{duration(totals[i])}</strong>
-                <span>{k === "paused" ? "Private / paused" : k}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </>
-    );
+    return <><TargetOverview data={data} onAttendance={()=>navigate('attendance')}/><WorkSummary rows={data.report.attendance} onRules={()=>navigate('productivity')} onSettings={()=>navigate('settings')}/></>;
   }
   if (view === "team")
     return (
@@ -481,34 +361,7 @@ function Reports({
         />
       </Card>
     );
-  return data.shots.length ? (
-    <div className="photo-grid">
-      {data.shots.map((s) => (
-        <button
-          key={s.id}
-          className="photo-card"
-          onClick={() => open({ kind: "shot", shot: s })}
-        >
-          <span className="photo-placeholder" aria-hidden>
-            ▧
-          </span>
-          <strong>{s.employee_id}</strong>
-          <small>{timeText(s.time)} IST</small>
-          <small>Open screenshot →</small>
-        </button>
-      ))}
-    </div>
-  ) : (
-    <Card>
-      <div className="empty">
-        <strong>No screenshots in this period</strong>
-        <p>
-          Captures follow the manager-controlled screenshot policy. They remain
-          off by default.
-        </p>
-      </div>
-    </Card>
-  );
+  return <ScreenshotGallery data={data} api={api} open={shot=>open({kind:'shot',shot})}/>;
 }
 
 function Settings({data,session,api,refresh,open,logout,notify}: {
@@ -612,6 +465,9 @@ function Dialog({
       null,
     ),
     [error, setError] = useState("");
+  const [shotList] = useState(()=>modal.kind==='shot'?data.shots.filter(s=>s.employee_id===modal.shot.employee_id).sort((a,b)=>a.time.localeCompare(b.time)||a.id.localeCompare(b.id)):[]);
+  const [shotIndex,setShotIndex] = useState(()=>modal.kind==='shot'?Math.max(0,shotList.findIndex(s=>s.id===modal.shot.id)):0);
+  const selectedShot=modal.kind==='shot'?(shotList[shotIndex]||modal.shot):null;
   useEffect(() => {
     const d = ref.current!;
     d.showModal();
@@ -620,10 +476,11 @@ function Dialog({
   useEffect(() => {
     if (modal.kind !== "shot" && modal.kind !== "audit") return;
     const c = new AbortController();
+    setLoaded(null);setError("");
     api<{ image?: string; audit?: Audit[] }>(
       modal.kind === "audit"
         ? "audit"
-        : "shot?" + new URLSearchParams({ id: modal.shot.id }),
+        : "shot?" + new URLSearchParams({ id: selectedShot!.id }),
       undefined,
       c.signal,
     )
@@ -634,7 +491,7 @@ function Dialog({
         if (!c.signal.aborted) setError(errorMessage(e));
       });
     return () => c.abort();
-  }, [modal, api]);
+  }, [modal, api, selectedShot]);
   async function save(path: string, body: unknown) {
     await api(path, body);
     close();
@@ -816,15 +673,15 @@ function Dialog({
       );
       break;
     case "shot":
-      content = loaded?.image ? (
-        <img
-          className="capture-image"
-          alt={`Screenshot for ${modal.shot.employee_id} recorded ${timeText(modal.shot.time)} IST`}
-          src={`data:image/${loaded.image.startsWith("iVBOR") ? "png" : "jpeg"};base64,${loaded.image}`}
-        />
-      ) : (
-        <p>Loading capture…</p>
-      );
+      content = <div className="capture-viewer">
+       <div className="capture-caption"><strong>{data.devices.find(d=>d.employee_id===selectedShot!.employee_id)?.employee_name||selectedShot!.employee_id}</strong><span>{selectedShot!.employee_id} | {timeText(selectedShot!.time)} IST</span><span>{shotIndex+1} / {shotList.length||1}</span></div>
+       <div className="capture-stage">
+        <button className="capture-arrow previous" aria-label="Previous screenshot" disabled={shotIndex===0} onClick={()=>setShotIndex(i=>i-1)}>&lsaquo;</button>
+        {error?<p role="alert">{error}</p>:loaded?.image?<img className="capture-image" alt={`Screenshot for ${selectedShot!.employee_id} recorded ${timeText(selectedShot!.time)} IST`} src={`data:image/${loaded.image.startsWith('iVBOR')?'png':'jpeg'};base64,${loaded.image}`}/>:<p role="status">Loading screenshot...</p>}
+        <button className="capture-arrow next" aria-label="Next screenshot" disabled={shotIndex>=shotList.length-1} onClick={()=>setShotIndex(i=>i+1)}>&rsaquo;</button>
+       </div><p className="capture-help">Use the left and right arrow keys to browse this employee's captures.</p>
+      </div>;
+
       break;
   }
   return (
@@ -832,6 +689,7 @@ function Dialog({
       ref={ref}
       className={`workspace-dialog dialog-${modal.kind}`}
       aria-labelledby="dialog-title"
+      onKeyDown={e=>{if(modal.kind==='shot'&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();setShotIndex(i=>Math.max(0,Math.min(shotList.length-1,i+(e.key==='ArrowRight'?1:-1))));}}}
       onCancel={close}
     >
       <div className="dialog-heading">
@@ -845,7 +703,7 @@ function Dialog({
         </button>
       </div>
       <div className="dialog-body">
-        {error ? (
+        {error && modal.kind!=="shot" ? (
           <p role="alert" className="error">
             {error}
           </p>
@@ -1061,7 +919,7 @@ export default function App() {
                   <p className="muted">
                     {
                       {
-                        overview: "A closer look at your team’s workday.",
+                        overview: "Track work targets and see who needs your attention.",
                         team: "Your people, their devices, and the latest connection status.",
                         attendance: "Work hours and attendance, day by day.",
                         usage: "Understand where active time is spent.",
@@ -1185,6 +1043,7 @@ export default function App() {
                   <Card><ClassificationEditor key={JSON.stringify(data.categories)} initial={data.categories} events={data.report.events} save={async rules => {await api('categories',rules);setToast('Productivity rules saved. Reports recalculated.');refresh();}} /></Card>
                 ) : (
                   <Reports
+                    api={api}
                     view={view}
                     data={data}
                     employee={filters.employee}
