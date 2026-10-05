@@ -1069,7 +1069,6 @@ export default function App() {
         <Login
           onLogin={(s) => {
             setError("");
-            setView("overview");
             setSession(s);
           }}
         />

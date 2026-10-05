@@ -23,16 +23,17 @@ export default function ClassificationEditor({initial,events,save}:{initial:Cate
     finally {setBusy(false);}
   }
   const items=[...catalog.map(item=>({...item,index:undefined as number|undefined,category:'unrated' as Category['category'],employee_id:''})),...rules.map((r,index)=>({...r,index})).filter(r=>!browser(r.match)&&r.match.toLowerCase().includes(query.toLowerCase()))];
-  const card=(item:typeof items[number])=><div className={`category-tool kanban-card ${drag?.match===item.match&&drag?.index===item.index?'is-dragging':''}`} key={`${item.index??'new'}:${item.target}:${item.match}`} draggable={!busy} tabIndex={0} aria-label={`Move ${item.match}`} onKeyDown={e=>{const keys:Record<string,Category['category']>={'0':'unrated','1':'productive','2':'neutral','3':'unproductive'};if(keys[e.key]){e.preventDefault();move(keys[e.key],item);}}} onDragStart={e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',item.match);setDrag(item);}} onDragEnd={()=>{setDrag(null);setOver(null);}}><span className="drag-grip" aria-hidden="true">&#x283f;</span><div><strong>{item.match||'New rule'}</strong><small>{item.target==='domain'?'Website':'Application'}{item.employee_id?` / ${item.employee_id}`:''}</small></div></div>;
+  const card=(item:typeof items[number])=><div className={`category-tool kanban-card ${drag?.match===item.match&&drag?.index===item.index?'is-dragging':''}`} key={`${item.index??'new'}:${item.target}:${item.match}`} draggable={!busy} tabIndex={0} aria-label={`Move ${item.match}`} onKeyDown={e=>{const keys:Record<string,Category['category']>={'0':'unrated','1':'productive','2':'neutral','3':'unproductive'};if(keys[e.key]){e.preventDefault();move(keys[e.key],item);}}} onDragStart={e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',item.match);setDrag(item);}} onDragEnd={()=>{setDrag(null);setOver(null);}}><span className="drag-grip" aria-hidden="true">&#x283f;</span><div><strong title={item.match}>{item.match||'New rule'}</strong><small>{item.target==='domain'?'Website':'Application'}{item.employee_id?` / ${item.employee_id}`:''}</small></div></div>;
   const zone=(category:Category['category'])=>({onDragOver:(e:React.DragEvent)=>{if(!drag)return;e.preventDefault();e.dataTransfer.dropEffect='move';setOver(category);},onDragLeave:(e:React.DragEvent)=>{if(!e.currentTarget.contains(e.relatedTarget as Node))setOver(null);},onDrop:(e:React.DragEvent)=>{e.preventDefault();move(category);setOver(null);}});
   return <div className="rules-editor kanban-editor">
+    <div className="rules-save"><span>{dirty?'You have unsaved changes.':'Rules are up to date.'}<small>Saving recalculates productivity in historical reports.</small></span><button className="primary" disabled={busy} onClick={submit}>{busy?'Saving…':'Save productivity rules'}</button></div>
     <section className={`discovered-tools unrated-tray ${over==='unrated'?'drop-active':''}`} {...zone('unrated')} aria-label="unrated drop zone">
       <div className="section-row"><div><h3>Unrated <span className="count-pill">{items.filter(i=>i.category==='unrated').length}</span></h3><p className="help">Drag cards into a column. Drag them back here to remove their rating.</p></div><label className="search-field"><span className="sr-only">Search discovered applications and websites</span><input type="search" placeholder="Search apps or domains..." value={query} onChange={e=>setQuery(e.target.value)} /></label></div>
       <div className="unrated-cards">{items.filter(i=>i.category==='unrated').map(card)}</div>
       {!items.some(i=>i.category==='unrated')&&<p className="help">{query?'No matching unrated tools.':'All discovered tools are rated. Drop a card here to unrate it.'}</p>}
     </section>
     <div className="category-board">{(['productive','neutral','unproductive'] as const).map(category=><section key={category} className={`category-lane ${category} ${over===category?'drop-active':''}`} {...zone(category)} aria-label={`${category} drop zone`}><h3><span className="lane-dot"/>{category[0].toUpperCase()+category.slice(1)} <span className="count-pill">{items.filter(i=>i.category===category).length}</span></h3><div className="category-items">{items.filter(i=>i.category===category).map(card)}</div><div className="kanban-drop-hint">{over===category?'Release to move here':'Drop cards here'}</div></section>)}</div>
-    <p className="help">Browsers are rated by website. Keyboard: focus a card and press 1 Productive, 2 Neutral, 3 Unproductive, or 0 Unrated.</p>
+    <p className="help">Browsers are rated by website. <span title="Focus a card: 1 Productive, 2 Neutral, 3 Unproductive, 0 Unrated">Keyboard shortcuts: 0?3</span></p>
     {rules.some(r=>browser(r.match))&&<p className="help">Browser application rules are ignored. Classify the websites visited instead.</p>}
 
     <details className="advanced-classification"><summary>Add or edit advanced rules</summary>
@@ -50,6 +51,6 @@ export default function ClassificationEditor({initial,events,save}:{initial:Cate
     </fieldset>)}</div>
     </details>
     {error&&<p className="error" role="alert">{error}</p>}
-    <div className="rules-save"><span>{dirty?'You have unsaved changes.':'Rules are up to date.'}<small>Saving recalculates productivity in historical reports.</small></span><button className="primary" disabled={busy} onClick={submit}>{busy?'Saving…':'Save productivity rules'}</button></div>
+
   </div>;
 }
