@@ -1,4 +1,4 @@
-// Isolated browser QA. All API writes are intercepted; production data is never changed.
+﻿// Isolated browser QA. All API writes are intercepted; production data is never changed.
 import { chromium } from 'playwright-core';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -55,6 +55,7 @@ try {
  for(const [button,name] of [['Manage projects','projects'],['Change password','password'],['View audit log','audit'],['Whitelist apps & sites →','classification']]){await page.getByRole('button',{name:button,exact:true}).click();if(name==='audit')await page.getByText('Updated daily work target to 8 hours.').waitFor();await capture('dialog-'+name);await close();}
  await nav('Screenshots');await page.getByRole('button',{name:/EMP001.*Open screenshot/}).click();await page.getByRole('img',{name:/Screenshot for/}).waitFor();await capture('dialog-screenshot');await close();
  await nav('Team & devices');await page.getByRole('button',{name:/Revoke/}).first().click();await capture('dialog-revoke');await close();
+ await page.getByRole('button',{name:'Edit work policy',exact:true}).first().click();await page.getByLabel('Policy source').selectOption('override');await capture('employee-policy-fixed');await page.getByLabel('Work arrangement').selectOption('consultant');await page.getByLabel('Required work hours per day').fill('2');await page.getByRole('combobox',{name:/^Schedule/}).selectOption('flexible');await capture('employee-policy-flexible');await page.setViewportSize({width:390,height:844});await capture('employee-policy-mobile');await page.setViewportSize({width:1440,height:1000});await close();
  await nav('Productivity rules');await page.getByRole('button',{name:'Whitelist Code.exe',exact:true}).click();await page.getByRole('button',{name:'Whitelist github.com',exact:true}).click();await page.locator('.rule-options summary').first().click();await capture('rules-edit-advanced');
  failSave=true;await page.getByRole('button',{name:'Save productivity rules'}).click();await page.getByRole('alert').waitFor();await capture('rules-save-error');failSave=false;await page.getByRole('button',{name:'Save productivity rules'}).click();await page.getByText('Productivity rules saved. Reports recalculated.').waitFor();assert(rules.some(r=>r.match==='Code.exe'&&r.target==='app'&&r.category==='productive'));assert(rules.some(r=>r.match==='github.com'&&r.target==='domain'&&r.match_kind==='domain'));await capture('rules-saved');
  await nav('Activity timeline');await page.getByLabel('Only verification flags').check();assert.equal(await page.getByText('Needs verification',{exact:true}).count(),1);await capture('timeline-filtered');
@@ -67,6 +68,7 @@ try {
  empty=true;await nav('Overview');await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByText('No records in this period').waitFor();await capture('mobile-empty-overview');
  await nav('Screenshots');await capture('mobile-empty-screenshots');
  assert.equal(failures.length,0,failures.join('\n'));
- await writeFile(resolve(output,'manifest.json'),JSON.stringify({screenshots,failures,checks:['login','all 9 pages at 3 widths','all 7 dialogs','settings tabs','hours conversion','whitelist app + domain save','failed save retains edits','verification filter','empty states','no horizontal page overflow','no browser exceptions']},null,2));
+ await writeFile(resolve(output,'manifest.json'),JSON.stringify({screenshots,failures,checks:['login','all 9 pages at 3 widths','all 8 dialogs including manager employee policy','settings tabs','hours conversion','whitelist app + domain save','failed save retains edits','verification filter','empty states','no horizontal page overflow','no browser exceptions']},null,2));
  console.log(`PASS: ${screenshots.length} screenshots; all page and component checks passed. ${output}`);
 } finally {await browser.close();}
+

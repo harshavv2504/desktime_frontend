@@ -1,3 +1,4 @@
+import EmployeePolicyEditor from './EmployeePolicyEditor';
 import WorkSummary from './WorkSummary';
 import ClassificationEditor from './ClassificationEditor';
 import {
@@ -255,6 +256,7 @@ function Reports({
               "Current app",
               "Last sync (IST)",
               "Device",
+              "Work policy",
               "Access",
             ]
       }
@@ -267,6 +269,7 @@ function Reports({
               d.app || "—",
               timeText(d.last_seen),
               <span title={d.id}>{d.id.slice(0, 8)}</span>,
+              <div><small>{d.work_policy?.schedule_mode === "flexible" ? "Flexible" : "Fixed"} | {(d.work_policy?.minimum_minutes ?? data.policy.minimum_minutes ?? 480)/60}h/day</small><button className="text-button" onClick={() => open({kind:"employee-policy",device:d})}>Edit work policy</button></div>,
               !d.revoked && (
                 <button
                   className="text-button"
@@ -641,11 +644,15 @@ function Dialog({
     categories: "Productivity rules & whitelist",
     password: "Change manager password",
     revoke: "Revoke device access",
+    "employee-policy": "Employee work policy",
     audit: "Administration audit",
     shot: "Screenshot",
   }[modal.kind];
   let content: ReactNode;
   switch (modal.kind) {
+    case "employee-policy":
+      content=<EmployeePolicyEditor device={modal.device} company={data.policy} save={body=>save("employee-policy",body)}/>;
+      break;
     case "invite":
       content = code ? (
         <>

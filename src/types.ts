@@ -18,6 +18,7 @@ export interface Employee {
   employee_name: string;
 }
 export interface Device extends Employee {
+  work_policy?: Policy;
   id: string;
   revoked: boolean;
   last_seen: string | null;
@@ -64,6 +65,9 @@ export interface Shot {
   time: string;
 }
 export interface Policy {
+  schedule_mode?: "fixed" | "flexible";
+  arrangement?: "full_time" | "part_time" | "consultant";
+  inherited?: boolean;
   minimum_minutes?: number; credit_idle?: boolean;
   lunch_minutes?: number; lunch_paid?: boolean;
   break_minutes?: number; break_paid?: boolean;
@@ -114,6 +118,7 @@ export type ModalState =
       };
     }["invite" | "projects" | "categories" | "password" | "audit"]
   | { kind: "revoke"; device: Device }
+  | { kind: "employee-policy"; device: Device }
   | { kind: "shot"; shot: Shot };
 
 export type VerificationSignal =
