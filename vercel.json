@@ -12,6 +12,42 @@
     {
       "source": "/downloads/:path*",
       "destination": "https://desktime-backend-396091833721.asia-south1.run.app/downloads/:path*"
+    },
+    {
+      "source": "/overview",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/team-and-devices",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/attendance",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/apps-and-websites",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/productivity-rules",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/activity-timeline",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/projects-and-tasks",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/screenshots",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/workspace-settings",
+      "destination": "/index.html"
     }
   ],
   "headers": [

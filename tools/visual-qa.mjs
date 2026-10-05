@@ -107,6 +107,12 @@ try {
  empty=true;await nav('Overview');await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByText('No records in this period').waitFor();await capture('mobile-empty-overview');
  await nav('Screenshots');await capture('mobile-empty-screenshots');
  assert.equal(failures.length,0,failures.join('\n'));
+ await nav('Screenshots');assert.equal(new URL(page.url()).pathname,'/screenshots');
+ await page.reload();await page.getByRole('heading',{name:'Screenshots',level:1}).waitFor();
+ await nav('Activity timeline');assert.equal(new URL(page.url()).pathname,'/activity-timeline');
+ await page.goBack();await page.getByRole('heading',{name:'Screenshots',level:1}).waitFor();
+ await page.goForward();await page.getByRole('heading',{name:'Activity timeline',level:1}).waitFor();
+ assert.equal(await page.title(),'Activity Timeline | Voicedots');
  await writeFile(resolve(output,'manifest.json'),JSON.stringify({screenshots,failures,checks:['login','all 9 pages at desktop and laptop widths','all 8 dialogs including manager employee policy','settings tabs','hours conversion','whitelist app + domain save','failed save retains edits','verification filter','empty states','no horizontal page overflow','no browser exceptions']},null,2));
  console.log(`PASS: ${screenshots.length} screenshots; all page and component checks passed. ${output}`);
 } finally {await browser.close();}

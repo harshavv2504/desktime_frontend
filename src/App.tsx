@@ -1,3 +1,4 @@
+import { usePageNavigation } from './navigation';
 import { ActivityDetails, preciseTime } from './ActivityDetails';
 import TargetOverview from './TargetOverview';
 import ScreenshotGallery from './ScreenshotGallery';
@@ -721,7 +722,7 @@ export default function App() {
     [checking, setChecking] = useState(true),
     [data, setData] = useState<Workspace | null>(null),
     [unavailable,setUnavailable]=useState<string[]>([]),
-    [view, setView] = useState<View>("overview"),
+    [view, setView] = usePageNavigation(),
     [modal, setModal] = useState<ModalState | null>(null);
   const [draft, setDraft] = useState<Filters>(() => ({
       from: istDate(),
