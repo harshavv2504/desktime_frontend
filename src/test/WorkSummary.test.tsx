@@ -16,7 +16,7 @@ it('discovers both browser apps and sites and saves explicit productive targets'
   const events=[{state:'active',app:'chrome.exe',domain:'github.com'}] as Activity[];
   render(<ClassificationEditor initial={[]} events={events} save={save}/>);
   expect(screen.queryByLabelText('Category for chrome.exe')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Category for github.com'),{target:{value:'productive'}});
+  fireEvent.keyDown(screen.getByLabelText('Move github.com'),{key:'1'});
   fireEvent.click(screen.getByRole('button',{name:'Save productivity rules'}));
   await waitFor(()=>expect(save).toHaveBeenCalledWith([
     {match:'github.com',target:'domain',category:'productive',match_kind:'domain'},
@@ -26,7 +26,7 @@ it('discovers both browser apps and sites and saves explicit productive targets'
 it('keeps classification edits when the server rejects a save',async()=>{
   const save=vi.fn().mockRejectedValue(Error('Connection interrupted'));
   render(<ClassificationEditor initial={[]} events={[{state:'active',app:'Code.exe',domain:''}] as Activity[]} save={save}/>);
-  fireEvent.change(screen.getByLabelText('Category for Code.exe'),{target:{value:'productive'}});
+  fireEvent.keyDown(screen.getByLabelText('Move Code.exe'),{key:'1'});
   fireEvent.click(screen.getByRole('button',{name:'Save productivity rules'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Connection interrupted');
   expect(screen.getByLabelText('Application or website')).toHaveValue('Code.exe');
@@ -50,4 +50,14 @@ it('caps each day independently with no offset from extra time',()=>{
  render(<WorkSummary rows={[{productive:36000,required:28800},{productive:21600,required:28800}] as Attendance[]}/>);
  expect(screen.getAllByText('87.5%')).toHaveLength(2);
  expect(screen.getByText('2h 0m remaining of 16h 0m')).toBeInTheDocument();
+});
+it('drags a rated card back to Unrated and preserves its rule',async()=>{
+ const save=vi.fn().mockResolvedValue({});
+ render(<ClassificationEditor initial={[{match:'Code.exe',target:'app',category:'productive',match_kind:'exact'}]} events={[]} save={save}/>);
+ const transfer={setData:vi.fn(),effectAllowed:'',dropEffect:''};
+ fireEvent.dragStart(screen.getByLabelText('Move Code.exe'),{dataTransfer:transfer});
+ fireEvent.drop(screen.getByLabelText('unrated drop zone'),{dataTransfer:transfer});
+ expect(screen.getByLabelText('unrated drop zone')).toContainElement(screen.getByLabelText('Move Code.exe'));
+ fireEvent.click(screen.getByRole('button',{name:'Save productivity rules'}));
+ await waitFor(()=>expect(save).toHaveBeenCalledWith([{match:'Code.exe',target:'app',category:'unrated',match_kind:'exact'}]));
 });
