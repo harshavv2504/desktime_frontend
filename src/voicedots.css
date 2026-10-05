@@ -1012,3 +1012,5 @@ progress::-moz-progress-bar {
 .classification-rule {margin:16px 0;display:grid;gap:12px;padding:16px;border:1px solid #ddd2ef;border-radius:10px;}
 .catalog-list {display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;max-height:180px;overflow:auto;}
 @media(max-width:700px){.work-counters{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+.window-context { display: block; min-width: 190px; max-width: 380px; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }

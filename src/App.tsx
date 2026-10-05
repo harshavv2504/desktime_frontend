@@ -150,7 +150,7 @@ function Form({
         </p>
       )}
       <button className="primary" disabled={busy} type="submit">
-        {busy ? "Workingâ€¦" : label}
+        {busy ? "Working…" : label}
       </button>
     </form>
   );
@@ -184,7 +184,7 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
               <strong>Projects & reports</strong>
             </div>
           </div>
-          <p className="login-brand-footer">Voicedots Â· Team operations</p>
+          <p className="login-brand-footer">Voicedots · Team operations</p>
         </div>
       </section>
       <main className="login-main">
@@ -263,7 +263,7 @@ function Reports({
           : [
               person(d),
               <Badge value={statusOf(d)} />,
-              d.app || "â€”",
+              d.app || "—",
               timeText(d.last_seen),
               <span title={d.id}>{d.id.slice(0, 8)}</span>,
               !d.revoked && (
@@ -306,7 +306,7 @@ function Reports({
               <span className="metric-detail">
                 {
                   [
-                    `${devices.length} enrolled devices Â· live status`,
+                    `${devices.length} enrolled devices · live status`,
                     "Recorded activity in this period",
                     "Time beyond the idle threshold",
                     "Scheduled time without coverage",
@@ -322,7 +322,7 @@ function Reports({
             title="Team at a glance"
             action={
               <button className="text-button" onClick={() => navigate("team")}>
-                View team â†’
+                View team →
               </button>
             }
           >
@@ -440,23 +440,26 @@ function Reports({
     );
   if (view === "usage")
     return (
-      <Card>
+      <Card action={<button className="secondary" onClick={() => open({ kind: "categories" })}>Manage classifications</button>}>
         <Table
           headers={[
             "Employee",
             "Application",
             "Website",
+            "Window / file context",
             "Category",
             "Active time",
           ]}
-          rows={groupEvents(data.report.usage_events || data.report.events, "usage").map((e) => [
+          rows={groupEvents(data.report.usage_events || data.report.events, "usage", true).map((e) => [
             person(e),
             e.app,
-            e.domain || "â€”",
+            e.domain || "—",
+            <span className="window-context" title={e.window_title || undefined}>{e.window_title || "No context recorded"}</span>,
             <Badge value={e.category} />,
             duration(e.seconds),
           ])}
         />
+        <p className="card-body help">Unrated means no matching classification rule. Window context is shown only when recorded by the updated employee app; older activity cannot be reconstructed. Different observed windows are listed separately.</p>
       </Card>
     );
   if (view === "timeline")
@@ -483,8 +486,8 @@ function Reports({
               e.domain || e.app,
               e.window_title || "Not available",
               <Badge value={e.state} />,
-              e.project || "â€”",
-              e.task || "â€”",
+              e.project || "—",
+              e.task || "—",
               duration(e.seconds),
             ])}
         />
@@ -508,7 +511,7 @@ function Reports({
           rows={groupEvents(data.report.usage_events || data.report.events, "projects").map((e) => [
             person(e),
             e.project || "Unassigned",
-            e.task || "â€”",
+            e.task || "—",
             duration(e.seconds),
           ])}
         />
@@ -523,11 +526,11 @@ function Reports({
           onClick={() => open({ kind: "shot", shot: s })}
         >
           <span className="photo-placeholder" aria-hidden>
-            â–§
+            ▧
           </span>
           <strong>{s.employee_id}</strong>
           <small>{timeText(s.time)} IST</small>
-          <small>Open screenshot â†’</small>
+          <small>Open screenshot →</small>
         </button>
       ))}
     </div>
@@ -703,7 +706,7 @@ function Settings({
             </div>
             <p className="help">
               Screenshots are manager-controlled. Enabled intervals must be
-              60â€“3,600 seconds.
+              60–3,600 seconds.
             </p>
           </Form>
         </div>
@@ -1022,7 +1025,7 @@ function Dialog({
           ])}
         />
       ) : (
-        <p>Loading audit recordsâ€¦</p>
+        <p>Loading audit records…</p>
       );
       break;
     case "shot":
@@ -1033,7 +1036,7 @@ function Dialog({
           src={`data:image/${loaded.image.startsWith("iVBOR") ? "png" : "jpeg"};base64,${loaded.image}`}
         />
       ) : (
-        <p>Loading captureâ€¦</p>
+        <p>Loading capture…</p>
       );
       break;
   }
@@ -1051,7 +1054,7 @@ function Dialog({
           aria-label="Close dialog"
           onClick={close}
         >
-          Ã—
+          ×
         </button>
       </div>
       <div className="dialog-body">
@@ -1201,7 +1204,7 @@ export default function App() {
   if (checking)
     return (
       <main className="loading" role="status">
-        Opening workspaceâ€¦
+        Opening workspace…
       </main>
     );
   return (
@@ -1237,9 +1240,9 @@ export default function App() {
               {data && (
                 <>
                   <strong>
-                    {data.policy.work_start}â€“{data.policy.work_end} IST
+                    {data.policy.work_start}–{data.policy.work_end} IST
                   </strong>
-                  <p>{data.policy.work_days.map((d) => days[d]).join(" Â· ")}</p>
+                  <p>{data.policy.work_days.map((d) => days[d]).join(" · ")}</p>
                 </>
               )}
               <div className="profile">
@@ -1258,7 +1261,7 @@ export default function App() {
               </span>
               <span className="sync-indicator" role="status">
                 {loading
-                  ? "Updatingâ€¦"
+                  ? "Updating…"
                   : updated
                     ? `Updated ${updated} IST`
                     : "Sync unavailable"}
@@ -1271,12 +1274,12 @@ export default function App() {
                   <p className="muted">
                     {
                       {
-                        overview: "A closer look at your teamâ€™s workday.",
+                        overview: "A closer look at your team’s workday.",
                         team: "Your people, their devices, and the latest connection status.",
                         attendance: "Work hours and attendance, day by day.",
                         usage: "Understand where active time is spent.",
                         timeline: "A chronological view of the workday.",
-                        projects: "See where your teamâ€™s time goes.",
+                        projects: "See where your team’s time goes.",
                         screenshots: "Review captures from employees under your screenshot policy.",
                         settings:
                           "Set up your workspace, work hours, and capture preferences.",
@@ -1402,7 +1405,7 @@ export default function App() {
               ) : (
                 <p className="loading">
                   {loading
-                    ? "Loading your workspaceâ€¦"
+                    ? "Loading your workspace…"
                     : "Workspace data is unavailable."}
                 </p>
               )}

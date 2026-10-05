@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import App, { parseCategories } from "../App";
-import { csvText, filterQuery, groupEvents } from "../reports";
+import { csvText, filterQuery, groupEvents, duration } from "../reports";
 import type { Activity } from "../types";
 
 const session = {
@@ -214,5 +214,22 @@ describe("React dashboard", () => {
       )[0].seconds,
     ).toBe(7200);
     expect(event.seconds).toBe(3600);
+  });
+  it("keeps distinct file contexts separate without splitting overview app totals", () => {
+    const events = [{...event, window_title: 'C:\\company\\main.py'}, {...event, window_title: 'C:\\personal\\main.py'}];
+    expect(groupEvents(events, 'usage', true)).toHaveLength(2);
+    expect(groupEvents(events, 'usage')).toHaveLength(1);
+    expect(duration(5)).toBe('5s');
+    expect(duration(65)).toBe('1m 5s');
+    expect(duration(0.25)).toBe('<1s');
+  });
+  it("shows context and classification controls on Apps and websites", async () => {
+    setup();
+    await screen.findByText('Team at a glance');
+    fireEvent.click(screen.getByRole('button', {name: 'Apps & websites'}));
+    await screen.findByRole('columnheader', {name: 'Window / file context'});
+    expect(screen.getByRole('button', {name: 'Manage classifications'})).toBeInTheDocument();
+    expect(screen.getByText('No context recorded')).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('\u00e2\u20ac');
   });
 });

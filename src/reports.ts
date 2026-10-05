@@ -26,8 +26,13 @@ export const timeText = (value?: string | null) =>
         hour12: false,
       }).format(new Date(value))
     : "—";
-export const duration = (seconds: number) =>
-  `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+export const duration = (seconds: number) => {
+  const value = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
+  if (value > 0 && value < 1) return "<1s";
+  if (value < 60) return `${Math.floor(value)}s`;
+  if (value < 3600) return `${Math.floor(value / 60)}m ${Math.floor(value % 60)}s`;
+  return `${Math.floor(value / 3600)}h ${Math.floor((value % 3600) / 60)}m`;
+};
 export const hours = (seconds: number) => (seconds / 3600).toFixed(2);
 export const initials = (value: string) =>
   value
@@ -55,13 +60,13 @@ export function filterQuery(f: Filters) {
   }).toString();
 }
 
-export function groupEvents(events: Activity[], mode: "usage" | "projects") {
+export function groupEvents(events: Activity[], mode: "usage" | "projects", includeContext = false) {
   const result = new Map<string, Activity>();
   for (const event of events) {
     if (event.state !== "active") continue;
     const key = JSON.stringify(
       mode === "usage"
-        ? [event.employee_id, event.app, event.domain, event.category]
+        ? [event.employee_id, event.app, event.domain, event.category, includeContext ? event.window_title || "" : ""]
         : [event.employee_id, event.project, event.task],
     );
     const row = result.get(key);
@@ -107,14 +112,16 @@ export function exportRows(
           "Employee",
           "Application",
           "Domain",
+          "Window title (observed)",
           "Category",
           "Seconds",
         ],
-        ...groupEvents(data.report.usage_events || data.report.events, "usage").map((e) => [
+        ...groupEvents(data.report.usage_events || data.report.events, "usage", true).map((e) => [
           e.employee_id,
           e.employee_name,
           e.app,
           e.domain,
+          e.window_title || "",
           e.category,
           e.seconds,
         ]),
