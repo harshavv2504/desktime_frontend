@@ -827,7 +827,7 @@ function Dialog({
   return (
     <dialog
       ref={ref}
-      className={["audit", "shot", "categories"].includes(modal.kind) ? "wide" : ""}
+      className={`workspace-dialog dialog-${modal.kind}`}
       aria-labelledby="dialog-title"
       onCancel={close}
     >

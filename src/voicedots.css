@@ -19,3 +19,52 @@ dialog{border:1px solid #e2d6ed;border-radius:14px;box-shadow:0 30px 100px #2512
 .sidebar,.card{min-width:0}.sidebar nav{max-width:100%}@media(max-width:760px){.workspace,.grid-two,.settings-grid,.settings-aside,.form-grid{grid-template-columns:minmax(0,1fr)}.sidebar{min-width:0}.sidebar nav{width:100%}.filter-bar label{min-width:0}.card-body .help,.help{font-size:12px}.rules-intro p{font-size:12px}.settings-tabs button{min-height:42px}}
 
 .stacked-cell strong{display:block;font-weight:500;font-size:12px}.stacked-cell small{display:block;color:#9b8ca8;font-size:10px;margin-top:5px}.attendance-details summary{cursor:pointer;color:#9061b5;font-size:11px}.attendance-details dl{min-width:190px;padding:13px;background:#faf7fe;border-radius:7px}.attendance-details dl>div{display:flex;gap:15px;justify-content:space-between;font-size:10px;margin:7px 0}.attendance-details dt{color:#9b85ab}.attendance-details dd{margin:0;color:#76538d}.timeline-toolbar{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px}.review-filter{display:flex;flex-direction:row;align-items:center;gap:9px;white-space:nowrap;font-size:12px}.timeline-toolbar details{font-size:11px;color:#967fa8;max-width:580px}.timeline-toolbar summary{cursor:pointer}.timeline-toolbar p{font-size:11px;margin:12px 0 0}.window-context small{display:block;font-size:10px;color:#a58bb5;margin-top:6px}.verification-evidence{min-width:145px;max-width:190px}.table-wrap td:has(.window-context){white-space:normal}.table-wrap td:has(.attendance-details){overflow:visible;white-space:normal}@media(max-width:760px){.timeline-toolbar{align-items:flex-start;flex-direction:column;gap:12px}.review-filter{font-size:12px}}
+
+/* Dialogs use the available screen width; only their content scrolls. */
+dialog.workspace-dialog{width:min(760px,calc(100vw - 64px));max-width:none;max-height:calc(100dvh - 64px);padding:0;border:1px solid #e4ddeb;border-radius:16px;overflow:hidden;box-shadow:0 28px 90px #18112240}
+dialog.workspace-dialog[open]{display:flex;flex-direction:column}
+dialog.dialog-employee-policy{width:min(960px,calc(100vw - 64px))}
+dialog.dialog-projects{width:min(860px,calc(100vw - 64px))}
+dialog.dialog-revoke{width:min(640px,calc(100vw - 64px))}
+dialog.dialog-categories,dialog.dialog-audit{width:min(1240px,calc(100vw - 64px))}
+dialog.dialog-shot{width:min(1440px,calc(100vw - 64px))}
+.workspace-dialog .dialog-heading{flex:none;padding:20px 28px;min-height:72px;background:#fff;border-bottom:1px solid var(--line)}
+.workspace-dialog .dialog-heading h2{font-size:19px;color:#30263e;letter-spacing:-.3px}
+.workspace-dialog .dialog-heading button{width:36px;height:36px;min-height:36px;display:grid;place-items:center;padding:0;border-radius:8px;background:#f5f2f8;font-size:23px;color:#766581}
+.workspace-dialog .dialog-body{overflow:auto;min-height:0;padding:24px 28px;overscroll-behavior:contain;scrollbar-gutter:stable}
+.workspace-dialog .dialog-form{gap:16px}
+.workspace-dialog p{margin:0;line-height:1.6}
+.workspace-dialog .dialog-form>p{max-width:none}
+.workspace-dialog .dialog-form .form-grid{gap:16px 24px}
+.workspace-dialog input,.workspace-dialog select{min-height:44px;font-size:13px}
+.workspace-dialog label,.workspace-dialog legend{font-size:13px}
+.workspace-dialog .help{color:#7d708b;font-size:12px}
+.workspace-dialog .dialog-form>.primary{justify-self:end;position:sticky;bottom:0;z-index:2;box-shadow:0 0 0 8px #fff,0 -8px 20px #ffffffef;min-width:180px;margin-top:6px}
+.workspace-dialog .check-grid input{min-height:0}
+.workspace-dialog .check-grid{gap:8px}
+.workspace-dialog .check-grid label{padding:10px 14px;font-size:12px}
+.workspace-dialog .policy-note{padding:12px 16px;background:#f8f5fc;border:1px solid #e9e0f2;border-radius:9px;font-size:12px;color:#786087}
+.dialog-password .dialog-form{grid-template-columns:1fr 1fr;column-gap:24px}
+.dialog-password .dialog-form>label:first-child,.dialog-password .dialog-form>p,.dialog-password .dialog-form>.primary{grid-column:1/-1}
+.dialog-invite .dialog-form{grid-template-columns:1fr 1fr;column-gap:24px}
+.dialog-invite .dialog-form>.primary,.dialog-invite .dialog-form>.error{grid-column:1/-1}
+.dialog-invite .dialog-body>label,.dialog-invite .code-box{margin:18px 0}
+.dialog-invite .dialog-body>.primary+p{margin-top:18px}
+.dialog-revoke .dialog-form{grid-template-columns:1fr auto;align-items:center}
+.dialog-revoke .dialog-form>p{grid-column:1/-1;margin-bottom:8px}
+.dialog-revoke .dialog-form>.secondary{justify-self:end}
+.dialog-revoke .dialog-form>.primary{background:#ad3558;margin:0;position:static;min-width:160px}
+.dialog-projects textarea{min-height:240px}
+.dialog-categories .rules-editor{padding:0}
+.dialog-shot .capture-image{display:block;width:100%;max-height:calc(100dvh - 184px);object-fit:contain;margin:0;background:#f5f3f8}
+@media(max-width:760px){dialog.workspace-dialog,dialog.dialog-employee-policy,dialog.dialog-projects,dialog.dialog-revoke,dialog.dialog-categories,dialog.dialog-audit,dialog.dialog-shot{width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:12px}.workspace-dialog .dialog-heading{padding:16px 18px;min-height:64px}.workspace-dialog .dialog-heading h2{font-size:17px}.workspace-dialog .dialog-body{padding:18px}.dialog-password .dialog-form,.dialog-invite .dialog-form{grid-template-columns:minmax(0,1fr)}.workspace-dialog .dialog-form>.primary{width:100%;min-width:0}.workspace-dialog .check-grid label{padding:9px 10px}.dialog-revoke .dialog-form{grid-template-columns:1fr 1fr}.dialog-revoke .dialog-form>.primary{min-width:0}.dialog-shot .capture-image{max-height:calc(100dvh - 132px)}}
+
+.workspace-dialog .dialog-heading{margin-bottom:0}
+.workspace-dialog .dialog-form>.primary{position:static;box-shadow:none}
+@media(min-width:761px){.dialog-employee-policy .dialog-form{grid-template-columns:1fr 1fr;column-gap:24px}.dialog-employee-policy .dialog-form>p,.dialog-employee-policy .dialog-form>.form-grid,.dialog-employee-policy .dialog-form>fieldset,.dialog-employee-policy .dialog-form>.primary{grid-column:1/-1}.dialog-employee-policy .dialog-form>label:nth-of-type(2){grid-column:2;grid-row:3}.dialog-employee-policy .dialog-form>label:first-of-type{grid-column:1;grid-row:3}}
+
+.dialog-categories .rules-intro{padding:16px;margin-bottom:18px}
+.dialog-categories .rule-list-heading{margin:18px 0 14px;padding-top:18px}
+.dialog-categories .rules-empty{padding:20px}
+.dialog-categories .rules-save{position:sticky;bottom:-24px;background:white;padding:16px 0;margin-top:16px;z-index:2;box-shadow:0 -8px 16px #ffffffed}
+@media(max-width:760px){.dialog-categories .rules-save{bottom:-18px}}

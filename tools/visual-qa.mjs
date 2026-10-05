@@ -40,6 +40,19 @@ async function capture(name){
   await page.screenshot({path:resolve(output,name+'.png'),fullPage:true,animations:'disabled'});screenshots.push(name);
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);
   assert(!overflow,`${name}: horizontal page overflow`);
+  if(await page.locator('dialog[open]').count()) {
+    const original=page.viewportSize();
+    for(const size of [{width:1920,height:1080},{width:1280,height:720},{width:390,height:844}]) {
+      await page.setViewportSize(size);
+      await page.screenshot({path:resolve(output,`${name}-${size.width}.png`),fullPage:true,animations:'disabled'});
+      screenshots.push(`${name}-${size.width}`);
+      const box=await page.locator('dialog[open]').boundingBox();
+      assert(box.x>=0&&box.y>=0&&box.x+box.width<=size.width+1&&box.y+box.height<=size.height+1,`${name}: dialog outside viewport`);
+      assert(await page.locator('dialog[open] .dialog-heading').isVisible());
+    }
+    await page.setViewportSize(original);
+  }
+
 }
 const nav=async title=>{await page.getByRole('navigation',{name:'Workspace'}).getByRole('button',{name:title,exact:true}).click();await page.getByRole('heading',{name:title,level:1}).waitFor();};
 const close=async()=>page.getByRole('button',{name:'Close dialog'}).click();
